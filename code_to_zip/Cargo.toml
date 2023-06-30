@@ -1,0 +1,19 @@
+[package]
+name = "code_to_zip"
+version = "1.0.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+flate2 = "1.0.26"
+zip = "0.6.6"
+structopt = "0.3.26"
+tar = "0.4.38"
+webbrowser = "0.8.10"
+embed-resource = "2.1.1"
+
+
+[[bin]]
+name = "main"
+path = "bin/main.rs"
