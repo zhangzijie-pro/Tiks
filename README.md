@@ -38,6 +38,7 @@ cargo build --release
 
 ```bash
 cargo run
+或者直接下载zip.exe去直接使用
 ```
 
 这将会编译并运行代码。请确保在代码中已经定义了 \`main\` 函数。
