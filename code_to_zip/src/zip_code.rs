@@ -73,8 +73,11 @@ fn compress_folder(
                 zip.write_all(&buffer)?;
 
                 // 将压缩后的文件放回原来的文件夹
-                fs::write(path, &buffer)?;
+                //fs::write(path, &buffer)?;
+                let parent_folder = path.parent().expect("Failed to get parent folder");
+                let new_file_path = parent_folder.join(file_name);
 
+                fs::write(new_file_path, &buffer)?;
             }else if path.is_dir() {
                 compress_folder(&path, zip, options, original_size, compressed_size)?;
             }
