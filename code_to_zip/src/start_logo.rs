@@ -12,7 +12,7 @@ pub fn strat_logo(){
 "#
     );
 println!("author: zijie Zhang");
-println!("version: 1.0.0");
+println!("version: 1.0.1");
 println!("If you have any questions, please contact me: zzj01262022@163.com");
 println!("Here you can compress your file items for easy transfer and use");
 println!(
