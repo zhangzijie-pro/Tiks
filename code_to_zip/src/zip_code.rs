@@ -60,7 +60,7 @@ fn compress_folder(
                                         .to_string_lossy()
                                         .into_owned();
                 
-                zip.start_file(file_name, options.clone());
+                zip.start_file(file_name.clone(), options.clone());
                 
                 let mut source = File::open(path.clone())?;
                 let mut buffer = Vec::new();
