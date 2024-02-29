@@ -109,18 +109,16 @@ pub fn cat(file: &str) -> Result<String,Error>{
 
 // history
 pub static mut HISTROY:Vec<String>=Vec::new();
-pub fn history_push(command: String) -> usize{
+pub fn history_push(command: String){
     unsafe{
         HISTROY.push(command);
-        let len = HISTROY.len();
-        len
     }
 }
 
 pub fn history() -> String{
     unsafe{
         for (i,item) in HISTROY.iter().enumerate(){
-            println!("{}: {}",i,item);
+            println!("{}: {}",i+1,item);
         }
     }
     String::new()

@@ -1,26 +1,40 @@
-use command::cache::{Cache,Cache_get,initialize_command_cache};
-use command::command::{history, HISTROY, PATH};
-use command::start_logo;
-use std::env;
-
+use command::{arg::Command, cache::{initialize_command_cache, Cache, Cache_get}, command::history, start_logo};
+use std::io::Write;
+use command::arg::Commands;
+use command::command::history_push;
 #[tokio::main]
 async fn main() {
         start_logo::strat_logo();
-        let args:Vec<String> =env::args().collect();
-        unsafe{
-            let path = &args[2];
-            let boxed_str: Box<str> = <String as Clone>::clone(&path).into_boxed_str();
-            // 将 Box<str> 转换为 'static 引用并泄漏（leak）其所有权
-            let static_str: &'static str = Box::leak(boxed_str);
-            PATH.unwrap().clone_from(&static_str);
+        let mut commands: Vec<Vec<String>> = Vec::new();
+        let mut command = Vec::new();
+        command.push("ls".to_string());
+        commands.push(command.clone());
+        let mut command1 = Vec::new();
+        command1.push("pwd".to_string());
+        commands.push(command1.clone());
+        let mut command2 = Vec::new();
+        command2.push("history".to_string());
+        commands.push(command2.clone());
+        
+        for (i,c) in commands.iter().enumerate(){
+            println!("{}",i+1);
+            Commands::analysis(c.clone()).await;
         }
-        let command = &args[1];
-        let cache2 = initialize_command_cache().await;
-        let value = <Cache as Cache_get>::cache_get(cache2.clone(), command.to_string()).await.unwrap();
-        if !value.is_empty(){
-            println!("{}",value);
-        }
-        // 命令行内容
+        /*command.push("pwd".to_string());
+                let cache = initialize_command_cache().await;
+                let value = <Cache as Cache_get>::cache_get(cache.clone(), command[1].to_string()).await.unwrap();
+        println!("{}",value);*/
+
+/*        command.push("history".to_string());
+                let cache = initialize_command_cache().await;
+                let value = <Cache as Cache_get>::cache_get(cache.clone(), command[2].to_string()).await.unwrap();
+        println!("{}",value);
+*/
+        /*
+        history_push(command[1].to_string());
+        history_push(command[2].to_string());*/
+
+// 命令行内容
         /*let command = String::from("pwd");
         let command2 = String::from("ls");
         let command3 = String::from("cd");
@@ -33,13 +47,10 @@ async fn main() {
         println!("pwd : {:?}",value);
         println!("ls: {:?}",value_ls);*/
         // 清理缓存数据
-        cache2.clear();
 }
 
 #[cfg(test)]
 mod test{
-    use super::{Cache,Cache_get};
-
     #[test]
     fn test_cache(){
         panic!("!")
