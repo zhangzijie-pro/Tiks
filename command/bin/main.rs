@@ -1,40 +1,32 @@
-use command::{arg::Command, cache::{initialize_command_cache, Cache, Cache_get}, command::history, start_logo};
-use std::io::Write;
+use command::{arg::Command, cache::initialize_command_cache, start_logo};
+use std::io::{self, Write};
 use command::arg::Commands;
-use command::command::history_push;
+
 #[tokio::main]
 async fn main() {
         start_logo::strat_logo();
-        let mut commands: Vec<Vec<String>> = Vec::new();
-        let mut command = Vec::new();
-        command.push("ls".to_string());
-        commands.push(command.clone());
-        let mut command1 = Vec::new();
-        command1.push("pwd".to_string());
-        commands.push(command1.clone());
-        let mut command2 = Vec::new();
-        command2.push("history".to_string());
-        commands.push(command2.clone());
+        let cache = initialize_command_cache().await;
+        loop {
+            let mut args: Vec<String> = Vec::new();
+            let mut input = String::new();
+            print!("\x1B[32;1m>>\x1B[0m ");
+            io::stdout().flush().unwrap();
         
-        for (i,c) in commands.iter().enumerate(){
-            println!("{}",i+1);
-            Commands::analysis(c.clone()).await;
+            if let Err(err) = io::stdin().read_line(&mut input) {
+                eprintln!("Failed to read input: {}", err);
+                continue;
+            }
+        
+            let command = input.trim();
+        
+            if command.is_empty() {
+                continue; // Ignore empty commands
+            }
+            args.extend(command.split_whitespace().map(|s| s.to_string()));
+            Commands::analysis(cache.clone(),args.clone()).await;
         }
-        /*command.push("pwd".to_string());
-                let cache = initialize_command_cache().await;
-                let value = <Cache as Cache_get>::cache_get(cache.clone(), command[1].to_string()).await.unwrap();
-        println!("{}",value);*/
 
-/*        command.push("history".to_string());
-                let cache = initialize_command_cache().await;
-                let value = <Cache as Cache_get>::cache_get(cache.clone(), command[2].to_string()).await.unwrap();
-        println!("{}",value);
-*/
-        /*
-        history_push(command[1].to_string());
-        history_push(command[2].to_string());*/
-
-// 命令行内容
+        // 命令行内容
         /*let command = String::from("pwd");
         let command2 = String::from("ls");
         let command3 = String::from("cd");
