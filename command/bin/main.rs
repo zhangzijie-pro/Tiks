@@ -1,4 +1,4 @@
-use command::{arg::Command, cache::initialize_command_cache, start_logo};
+use command::{arg::Command, cache::initialize_command_cache, command::{history_push, pwd, whoami}, start_logo};
 use std::io::{self, Write};
 use command::arg::Commands;
 
@@ -9,7 +9,7 @@ async fn main() {
         loop {
             let mut args: Vec<String> = Vec::new();
             let mut input = String::new();
-            print!("\x1B[32;1m>>\x1B[0m ");
+            print!("\x1B[32;1m{}\x1B[0m:\x1B[34m{}>>\x1B[0m ",whoami(),pwd());
             io::stdout().flush().unwrap();
         
             if let Err(err) = io::stdin().read_line(&mut input) {
@@ -18,7 +18,7 @@ async fn main() {
             }
         
             let command = input.trim();
-        
+            history_push(command.to_string());
             if command.is_empty() {
                 continue; // Ignore empty commands
             }

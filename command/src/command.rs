@@ -1,9 +1,14 @@
 use std::sync::{Mutex, RwLock};
 use std::{env, fs};
 use std::io::{self, Error, ErrorKind, Read};
-use std::path::{Component, Path};
+use std::path::Path;
 
 use lazy_static::lazy_static;
+
+// whoami
+pub fn whoami() -> String{
+    whoami::username()
+}
 
 // help 
 pub fn help() -> String{
@@ -31,7 +36,7 @@ pub fn pwd() -> String{
 }
 
 // ls
-pub fn ls() -> io::Result<String> {
+pub fn ls() -> io::Result<String> {  
     let dir_path = Path::new("./");
     let mut result = String::new();
     if dir_path.is_dir() {
@@ -67,17 +72,8 @@ pub fn history() -> String{
 }
 
 // cd
-pub fn cd(path: Option<&str>) -> Result<String,Error>{
-    let mut new_dir = env::current_dir().unwrap();
-    let new_path = Path::new(path.unwrap());
-    for component in new_path.components(){
-        match component {
-            Component::Normal(p) => new_dir.push(p),
-            Component::ParentDir => {new_dir.pop();},
-            _ => {}
-        }
-    }
-
+pub fn cd(path: &str) -> Result<String,Error>{
+    let new_path = Path::new(path);
     env::set_current_dir(new_path)?;
     Ok("cd over!".to_string())
 }
@@ -99,7 +95,7 @@ pub fn turn_dir(command: String, dir: String) -> Result<String,Error>{
             rm(&dir_lock)
         },
         "cd" =>{
-            cd(Some(&dir_lock))
+            cd(&dir_lock)
         }
         _ => {
             Err(io::Error::new(

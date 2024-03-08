@@ -54,7 +54,7 @@ impl Cache_get for Cache {
     }
 }
 
-use crate::command::{ help, history, ls, pwd};
+use crate::command::{ help, ls, whoami};
 // 初始化缓存
 pub static COMMAND_CACHE: Lazy<OnceCell<CacheMap>> = Lazy::new(OnceCell::new);
 
@@ -63,10 +63,10 @@ pub async fn initialize_command_cache() -> &'static CacheMap {
         let cache = Cache::new();
         let cache_clone = cache.clone();
         let cache_set_ft = async move{
-            <Cache as Cache_set>::cache_set(cache_clone.clone(), "pwd".to_string(), pwd()).await;
-            <Cache as Cache_set>::cache_set(cache_clone.clone(), "ls".to_string(), ls().unwrap()).await;
+            <Cache as Cache_set>::cache_set(cache_clone.clone(), "whoami".to_string(), whoami()).await;
             <Cache as Cache_set>::cache_set(cache_clone.clone(), "help".to_string(), help()).await;
-            <Cache as Cache_set>::cache_set(cache_clone.clone(), "history".to_string(), history()).await;
+            <Cache as Cache_set>::cache_set(cache_clone.clone(), "ls".to_string(), ls().unwrap()).await;
+            /*<Cache as Cache_set>::cache_set(cache_clone.clone(), "history".to_string(), history()).await;*/
         };
         tokio::task::spawn_blocking(|| {
             tokio::runtime::Runtime::new().unwrap().block_on(cache_set_ft)
