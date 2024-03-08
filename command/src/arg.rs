@@ -1,6 +1,8 @@
+use std::io::Error;
+
 use async_trait::async_trait;
 
-use crate::{cache::{Cache, CacheMap, Cache_get}, command::{history, rename, turn_dir, turn_file}};
+use crate::{cache::{Cache, CacheMap, Cache_get}, command::{history, ls, rename, turn_dir, turn_file}};
 
 #[async_trait]
 pub trait Command {
@@ -15,23 +17,8 @@ impl Command for Commands{
         match len{
             1=> {
                 let command = &commands[0];
-                match command.as_str() {
-                    "exit"=>{
-                        std::process::exit(0)
-                    },
-                    "history" => {
-                        history();
-                    }
-                    _ => {
-                        let value = <Cache as Cache_get>::cache_get(cache.clone(), command.to_string()).await;
-                        match value {
-                            Some(ref s) => println!("{}",s),
-                            None => {
-                                eprintln!("Error: Can't found this {}",command);
-                            }
-                        }
-                    }
-                }
+                let res = simple_command(cache.clone(), command).await.unwrap();
+                println!("{}",res)
             },
             2 => {
                 let command = &commands[0];
@@ -41,7 +28,7 @@ impl Command for Commands{
                 }else if let Ok(res) = turn_dir(command.clone(), path.clone()) {
                     println!("{}",res);
                 }else{
-                    eprintln!("\x1B[32mError: Can't found this: {}\x1B[0m", command);
+                    eprintln!("Error: Can't found this: \x1B[33m{}\x1B[0m", command);
                 }
             },
             3 => {
@@ -57,5 +44,30 @@ impl Command for Commands{
                 println!("None")
             }
         }
+    }
+}
+
+async fn simple_command(cache:CacheMap,command: &String) -> Result<String,Error>{
+    match command.as_str() {
+        "exit"=>{
+            std::process::exit(0)
+        },
+        "history" => {
+            history()
+        },
+        "ls" => Ok({
+            let s = ls().unwrap();
+            s
+        }),
+        _ => Ok({
+            let value = <Cache as Cache_get>::cache_get(cache.clone(), command.to_string()).await;
+            match value {
+                Some(ref s) => s.to_string(),
+                None => {
+                    eprintln!("Error: Can't found this \x1B[31m{}\x1B[0m",command);
+                    String::new()
+                }
+            }
+        })
     }
 }

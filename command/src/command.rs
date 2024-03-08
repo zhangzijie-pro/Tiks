@@ -13,7 +13,7 @@ pub fn whoami() -> String{
 // help 
 pub fn help() -> String{
     let help = format!(
-    "\x1B[34mCommands:
+    "\n\x1B[34mCommands:
         pwd  View current directory
         ls   View all files in the current directory
         cd   Change directory   
@@ -24,7 +24,7 @@ pub fn help() -> String{
         history   View past Commands
         cat     view file only read
         mv      move file's path
-        exit    exit this process\x1B[0m"
+        exit    exit this process\x1B[0m\n"
     );
     help
 }
@@ -63,12 +63,12 @@ pub fn history_push(command: String){
     history.push(command); 
 }
 
-pub fn history() -> String{
+pub fn history() -> Result<String,Error>{
     let s = HISTROY.lock().unwrap();
     for (i,c) in s.iter().enumerate(){
         println!("{}: {}",i,c);
     }
-    String::new()
+    Ok(String::new())
 }
 
 // cd
