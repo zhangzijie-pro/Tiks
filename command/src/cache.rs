@@ -54,7 +54,7 @@ impl Cache_get for Cache {
     }
 }
 
-use crate::command::{ help, ls, whoami};
+use crate::commands::command::{ help, whoami};
 // 初始化缓存
 pub static COMMAND_CACHE: Lazy<OnceCell<CacheMap>> = Lazy::new(OnceCell::new);
 
@@ -62,14 +62,8 @@ pub async fn initialize_command_cache() -> &'static CacheMap {
     let res = COMMAND_CACHE.get_or_init(|| async {
         let cache = Cache::new();
         let cache_clone = cache.clone();
-        let cache_set_ft = async move{
-            <Cache as Cache_set>::cache_set(cache_clone.clone(), "whoami".to_string(), whoami()).await;
-            <Cache as Cache_set>::cache_set(cache_clone.clone(), "help".to_string(), help()).await;
-        };
-        tokio::task::spawn_blocking(|| {
-            tokio::runtime::Runtime::new().unwrap().block_on(cache_set_ft)
-        });
-
+        <Cache as Cache_set>::cache_set(cache_clone.clone(), "whoami".to_string(), whoami()).await;
+        <Cache as Cache_set>::cache_set(cache_clone.clone(), "help".to_string(), help()).await;
         cache
     }).await;
     res

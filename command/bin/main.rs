@@ -1,16 +1,16 @@
-use command::{arg::Command, cache::initialize_command_cache, command::{history_push, pwd, whoami}, start_logo};
+use command::{cache::initialize_command_cache, commands::{arg::{Command, Commands}, command::{history_push, pwd,whoami}}, root::SessionContext, start_logo};
 use std::io::{self, Write};
-use command::arg::Commands;
+
 
 #[tokio::main]
 async fn main() {
         start_logo::strat_logo();
         let cache = initialize_command_cache().await;
+        let mut session_context = SessionContext::new();
         loop {
             let mut args: Vec<String> = Vec::new();
             let mut input = String::new();
-            print!("\x1B[32;1m{}\x1B[0m:\x1B[34m{}>>\x1B[0m ",whoami(),pwd());
-            io::stdout().flush().unwrap();
+            print_prompt(&session_context);
         
             if let Err(err) = io::stdin().read_line(&mut input) {
                 eprintln!("Failed to read input: {}", err);
@@ -22,24 +22,40 @@ async fn main() {
             if command.is_empty() {
                 continue; // Ignore empty commands
             }
-            args.extend(command.split_whitespace().map(|s| s.to_string()));
-            Commands::analysis(cache.clone(),args.clone()).await;
+            match command{
+                "root" => {
+                    session_context.user_state.toggle_root();
+                    println!("Switched to root mode: {}", session_context.user_state.root);
+                },
+                "exit" => {
+                    if session_context.user_state.root ==true{
+                        session_context.user_state.exit_root();
+                        println!("Switched to root mode: {}", session_context.user_state.root);
+                    }else {
+                        cache.clear();
+                        std::process::exit(0);
+                    }
+                },
+                _ =>{
+                    args.extend(command.split_whitespace().map(|s| s.to_string()));
+                    Commands::handle_command(cache.clone(),args.clone(),&session_context).await;
+                }
+            }
         }
 
-        // 命令行内容
-        /*let command = String::from("pwd");
-        let command2 = String::from("ls");
-        let command3 = String::from("cd");
-        // 初始化缓存内容
-        let cache2 = initialize_command_cache().await;
-        let value_cd = <Cache as Cache_get>::cache_get(cache2.clone(), command3).await.unwrap();
-        let value = <Cache as Cache_get>::cache_get(cache2.clone(), command).await.unwrap();
-        let value_ls = <Cache as Cache_get>::cache_get(cache2.clone(), command2).await.unwrap();
-        println!("cd is successed :{}",value_cd);
-        println!("pwd : {:?}",value);
-        println!("ls: {:?}",value_ls);*/
-        // 清理缓存数据
 }
+
+// root
+fn print_prompt(session_context: &SessionContext) {
+    let mut  whoami = whoami();
+    if session_context.user_state.root {
+        whoami = "root".to_string();
+    }
+    
+    print!("\x1B[32;1m{}\x1B[0m:\x1B[34m{}>>\x1B[0m ",whoami,pwd()); // Assuming whoami() returns the current user
+    io::stdout().flush().unwrap();
+}
+
 
 #[cfg(test)]
 mod test{

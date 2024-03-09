@@ -1,3 +1,4 @@
+use std::fs::File;
 use std::sync::{Mutex, RwLock};
 use std::{env, fs};
 use std::io::{self, Error, ErrorKind, Read};
@@ -13,18 +14,22 @@ pub fn whoami() -> String{
 // help 
 pub fn help() -> String{
     let help = format!(
-    "\n\x1B[34mCommands:
-        pwd  View current directory
-        ls   View all files in the current directory
-        cd   Change directory   
-        rm   delete directory or file  
-        rn   rename directory or file  
-        touch   create a new file
-        mkdir   create a new directory
-        history   View past Commands
-        cat     view file only read
-        mv      move file's path
-        exit    exit this process\x1B[0m\n"
+    "Usage: <command> [options]
+\n\x1B[34mCommands:
+    pwd  View current directory
+    ls   View all files in the current directory
+    cd   Change directory   
+    rm   delete directory or file  
+    rn   rename directory or file  
+    touch   create a new file
+    mkdir   create a new directory
+    history   View past Commands
+    cat     view file only read
+    mv      move file's path
+    python  run code in python
+    html    open html file
+    apt     download file or software
+    exit    exit this process\x1B[0m\n"
     );
     help
 }
@@ -36,16 +41,16 @@ pub fn pwd() -> String{
 }
 
 // ls
-pub fn ls() -> io::Result<String> {  
+pub fn ls() -> io::Result<String> { 
     let dir_path = Path::new("./");
     let mut result = String::new();
     if dir_path.is_dir() {
         for entry in fs::read_dir(dir_path)? {
             let entry = entry?;
             if entry.file_type()?.is_file() {
-                result.push_str(&format!("  {}  ", entry.file_name().into_string().unwrap()));
+                result.push_str(&format!("{}    ", entry.file_name().into_string().unwrap()));
             } else {
-                result.push_str(&format!("\x1B[32m  {}  \x1B[0m", entry.path().display()));
+                result.push_str(&format!("\x1B[32m{}    \x1B[0m", entry.path().display()));
             }
         }
         Ok(result)
@@ -199,3 +204,69 @@ pub fn cat(file: &str) -> Result<String,Error>{
     let _ = f.unwrap().read_to_string(&mut buffer);
     Ok(buffer)
 }
+
+use crate::commands::download::{download_package, find_package};
+// download
+pub fn download(name: &str) -> Result<(), Box<dyn std::error::Error>>{
+    match find_package(name) {
+        Some(package) => {
+            Ok(if let Err(err) = download_package(&package) {
+                eprintln!("Error: {}", err);
+            })
+        },
+        None => Ok({
+            eprintln!("Package {} not found.", name);
+        })
+    }
+}
+
+use tar::Archive;
+use flate2::read::GzDecoder;
+use flate2::Compression;
+use flate2::write::GzEncoder;
+use super::arg::Commands;
+
+// unzip or zip
+pub fn tar(command: Commands, file: &str, to: &str) -> Result<(),std::io::Error>{
+    if command.command.as_str() == "tar"{
+        match command.arg.as_str(){
+            "-h" => {
+                let s = format!(
+                    "
+                  tar -zxvf : tar file
+                  tar -xvf  : untar file
+                    "
+                );
+                println!("{}",s)
+            },
+            "-zxvf" => {
+                let _ = zxvf(file, to);
+            },
+            "-xvf" => {
+                let _ = xvf(to);
+            },
+            _ =>{
+                eprintln!("Can't support this arg")
+            }
+        }
+    }
+    Ok(())
+}
+
+pub fn zxvf(file: &str, to: &str) -> Result<(),std::io::Error>{
+    let tar_gz = File::create(to)?;
+    let enc = GzEncoder::new(tar_gz, Compression::default());
+    let mut tar = tar::Builder::new(enc);
+    tar.append_file(file, &mut File::open(file)?)?;
+    Ok(())
+}
+
+pub fn xvf(to: &str) -> Result<(),std::io::Error>{
+    let tar_gz = File::open(to)?;
+    let tar = GzDecoder::new(tar_gz);
+    let mut archive = Archive::new(tar);
+    archive.unpack(".")?;
+    Ok(())
+}
+
+// 重定向输出

@@ -1,3 +1,5 @@
+// start_logo in this termial
+
 pub fn strat_logo(){
     println!("Welcome to Tiks (Simple Linux terminal)");
     println!(
