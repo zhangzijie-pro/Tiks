@@ -104,6 +104,7 @@ async fn normal_command(cache:CacheMap,command: &String) -> Result<String,Error>
             }
         })
     }
+
 }
 
 fn twice_option(command: &String,path: &String){

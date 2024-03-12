@@ -1,6 +1,6 @@
 use command::{cache::initialize_command_cache, commands::{arg::{Command, Commands}, command::{history_push, pwd,whoami}}, root::SessionContext, start_logo};
 use std::io::{self, Write};
-
+use command::get::get_hty::get_last;
 
 #[tokio::main]
 async fn main() {
@@ -19,6 +19,7 @@ async fn main() {
         
             let command = input.trim();
             history_push(command.to_string());
+
             if command.is_empty() {
                 continue; // Ignore empty commands
             }
@@ -37,8 +38,22 @@ async fn main() {
                     }
                 },
                 _ =>{
-                    args.extend(command.split_whitespace().map(|s| s.to_string()));
-                    Commands::handle_command(cache.clone(),args.clone(),&session_context).await;
+                    if command.parse::<usize>().is_ok(){
+                        let (_i,res) = get_last(command.parse::<usize>().unwrap());
+                        match res{
+                            Some(command) => {
+                                args.extend(command.split_whitespace().map(|s| s.to_string()));
+                                Commands::handle_command(cache.clone(),args.clone(),&session_context).await;
+                            },
+                            None =>{
+                                continue;
+                            }
+                        }
+
+                    }else{
+                        args.extend(command.split_whitespace().map(|s| s.to_string()));
+                        Commands::handle_command(cache.clone(),args.clone(),&session_context).await;
+                    }
                 }
             }
         }
@@ -55,7 +70,6 @@ fn print_prompt(session_context: &SessionContext) {
     print!("\x1B[32;1m{}\x1B[0m:\x1B[34m{}>>\x1B[0m ",whoami,pwd()); // Assuming whoami() returns the current user
     io::stdout().flush().unwrap();
 }
-
 
 #[cfg(test)]
 mod test{
