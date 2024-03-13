@@ -14,7 +14,7 @@ pub fn whoami() -> String{
 // help 
 pub fn help() -> String{
     let help = format!(
-    "Usage: <command> [options]
+    "Usage: <command> [arg] [options]
 \n\x1B[34mCommands:
     pwd  View current directory
     ls   View all files in the current directory
@@ -29,6 +29,7 @@ pub fn help() -> String{
     python  run code in python
     html    open html file
     apt     download file or software
+    tar -zxvf : Compression    tar -xvf  : decompression
     exit    exit this process\x1B[0m\n"
     );
     help
@@ -226,10 +227,10 @@ use flate2::Compression;
 use flate2::write::GzEncoder;
 use super::arg::Commands;
 
-// unzip or zip
+//
 pub fn tar(command: Commands, file: &str, to: &str) -> Result<(),std::io::Error>{
     if command.command.as_str() == "tar"{
-        match command.arg.as_str(){
+        match command.option.as_str(){
             "-h" => {
                 let s = format!(
                     "

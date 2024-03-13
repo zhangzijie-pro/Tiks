@@ -1,4 +1,9 @@
-use command::{cache::initialize_command_cache, commands::{arg::{Command, Commands}, command::{history_push, pwd,whoami}}, root::SessionContext, start_logo};
+// This is a Simple Terimal in RUST
+// there is some error or other suggestions contact me : zzj01262022@163.com
+// Cargo run
+
+use command::{cache::initialize_command_cache, commands::{arg::{Command, Commands}, command::{history_push, pwd,whoami}}, root::SessionContext};
+use command::start_logo;
 use std::io::{self, Write};
 use command::get::get_hty::get_last;
 
@@ -57,7 +62,6 @@ async fn main() {
                 }
             }
         }
-
 }
 
 // root

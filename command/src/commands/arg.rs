@@ -15,23 +15,59 @@ pub trait Command {
 }
 
 #[allow(dead_code)]
+#[derive(Debug,Clone)]
 pub struct Commands{
     pub command: String,
-    pub arg: String
+    pub option: String,
+    pub arg: Vec<String>
 }
 
 impl Commands {
-    pub fn find_help(command: &str, arg: &str) -> String{
-        let binding = help();
-        let s = binding.lines();
-        for i in s{
-            if arg == "-h" && i.contains(command){
-                return i.to_string()
+    pub fn new(commands: Vec<String>) -> Commands{
+        let len = commands.len();
+        let mut command = String::new();
+        let mut option = String::new();
+        let mut arg: Vec<String> = Vec::new();
+        command = commands[0].clone();
+        match len{
+            2 =>{
+                match commands[1].starts_with("-"){
+                    true => {
+                        option=commands[1].clone()
+                    },
+                    false =>{
+                        arg.push(commands[1].clone())
+                    }
+                }
+            },
+            _ =>{
+                option = commands[1].clone();
+                arg.append(&mut commands[2..len].to_vec())
             }
         }
-        "Can't found this command".to_string()
+        Commands{
+            command,
+            option,
+            arg
+        }
+    }
+
+    pub fn find_help(command: Commands) -> String{
+        let mut res = String::new();
+        if command.option=="-h"{
+            let binding = help();
+            let s = binding.lines();
+            for i in s{
+                if command.option == "-h" && i.contains(&command.command){
+                    res = i.to_string()
+                }
+            }
+            res = "Can't found this command".to_string()
+        }
+        res
     }
 }
+
 
 #[async_trait]
 impl Command for Commands{
@@ -90,7 +126,7 @@ async fn normal_command(cache:CacheMap,command: &String) -> Result<String,Error>
         "history" => {
             history()
         },
-        "ls" => {
+        "ls"|"l" => {
             ls()
         },
         _ => Ok({
@@ -124,7 +160,7 @@ fn run_code(command: &String,file: Option<&str>) -> Result<String,std::io::Error
         "html" | "web" => {
             html(file)
         },
-        "python" => {
+        "python" | "py" => {
             python(file)
         },
         _ => Ok({
@@ -134,5 +170,43 @@ Command '{}' not found, did you mean:
         ",command,command);
             apt
         }) 
+    }
+}
+
+async fn root_command(len: usize,cache: CacheMap,command: Commands){
+    match len {
+        1 => {               
+            let res = normal_command(cache.clone(), &command.command).await.unwrap();
+            println!("{}",res)
+        },
+        2 => {
+            twice_option(&command.command, &command.arg[0])
+        },
+        3 => {
+            let source = &command.arg[0]; 
+            let now = &command.arg[1];
+            if command.command == "rename".to_string(){
+                let s = rename(source, now).unwrap();
+                println!("{}",s);
+            }
+        },
+        _ => {
+            eprint!("404: Not Found")
+        }
+    }
+}
+
+async fn user_command(len: usize,cache: CacheMap,command: Commands){
+    match len {
+        1 => {               
+            let res = normal_command(cache.clone(), &command.command).await.unwrap();
+            println!("{}",res)
+        },
+        2 => {
+            twice_option(&command.command, &command.arg[0])
+        },
+        _ => {
+            eprint!("404: Not Found")
+        }
     }
 }
