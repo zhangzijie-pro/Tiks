@@ -25,10 +25,9 @@ pub struct Commands{
 impl Commands {
     pub fn new(commands: Vec<String>) -> Commands{
         let len = commands.len();
-        let mut command = String::new();
+        let command = commands[0].clone();
         let mut option = String::new();
         let mut arg: Vec<String> = Vec::new();
-        command = commands[0].clone();
         match len{
             2 =>{
                 match commands[1].starts_with("-"){
@@ -42,7 +41,7 @@ impl Commands {
             },
             _ =>{
                 option = commands[1].clone();
-                arg.append(&mut commands[2..len].to_vec())
+                arg.append(&mut commands[2..=len-1].to_vec())
             }
         }
         Commands{

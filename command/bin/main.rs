@@ -1,4 +1,5 @@
 // This is a Simple Terimal in RUST
+//  Tiks
 // there is some error or other suggestions contact me : zzj01262022@163.com
 // Cargo run
 
