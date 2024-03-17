@@ -3,7 +3,7 @@
 // there is some error or other suggestions contact me : zzj01262022@163.com
 // Cargo run
 
-use command::{cache::initialize_command_cache, commands::{arg::{Command, Commands}, command::{history_push, pwd,whoami}}, root::SessionContext};
+use command::{cache::initialize_command_cache, commands::{arg::handle_command, command::{history_push, pwd}}, root::SessionContext};
 use command::start_logo;
 use std::io::{self, Write};
 use command::get::get_hty::get_last;
@@ -16,7 +16,7 @@ async fn main() {
         loop {
             let mut args: Vec<String> = Vec::new();
             let mut input = String::new();
-            print_prompt(&session_context);
+            print_prompt(&mut session_context);
         
             if let Err(err) = io::stdin().read_line(&mut input) {
                 eprintln!("Failed to read input: {}", err);
@@ -28,56 +28,39 @@ async fn main() {
 
             if command.is_empty() {
                 continue; // Ignore empty commands
-            }
-            match command{
-                "root" => {
-                    session_context.user_state.toggle_root();
-                    println!("Switched to root mode: {}", session_context.user_state.root);
-                },
-                "exit" => {
-                    if session_context.user_state.root ==true{
-                        session_context.user_state.exit_root();
-                        println!("Switched to root mode: {}", session_context.user_state.root);
-                    }else {
-                        cache.clear();
-                        std::process::exit(0);
-                    }
-                },
-                _ =>{
-                    if command.parse::<usize>().is_ok(){
-                        let (_i,res) = get_last(command.parse::<usize>().unwrap());
-                        match res{
-                            Some(command) => {
-                                args.extend(command.split_whitespace().map(|s| s.to_string()));
-                                Commands::handle_command(cache.clone(),args.clone(),&session_context).await;
-                            },
-                            None =>{
-                                continue;
-                            }
-                        }
-
-                    }else{
+            }else if command.parse::<usize>().is_ok(){
+                let (_i,res) = get_last(command.parse::<usize>().unwrap());
+                match res{
+                    Some(command) => {
                         args.extend(command.split_whitespace().map(|s| s.to_string()));
-                        Commands::handle_command(cache.clone(),args.clone(),&session_context).await;
+                        handle_command(cache.clone(),args.clone(),&mut session_context).await;
+                    },
+                    None =>{
+                        continue;
                     }
                 }
+
+            }else{
+                args.extend(command.split_whitespace().map(|s| s.to_string()));
+                handle_command(cache.clone(),args.clone(),&mut session_context).await;
             }
         }
 }
 
 // root
-fn print_prompt(session_context: &SessionContext) {
-    let mut  whoami = whoami();
-    if session_context.user_state.root {
-        whoami = "root".to_string();
+fn print_prompt(session_context: &mut SessionContext) {
+    let mut whoami = session_context.get_username();
+    if session_context.user_state.root{
+        whoami="root".to_string()
     }
-    
-    print!("\x1B[32;1m{}\x1B[0m:\x1B[34m{}>>\x1B[0m ",whoami,pwd()); // Assuming whoami() returns the current user
+    let input = format!("\x1B[32;1m{}\x1B[0m:\x1B[34m{}>>\x1B[0m ",whoami,pwd()); // Assuming whoami() returns the current user
+    print!("{}",input);
     io::stdout().flush().unwrap();
 }
 
 #[cfg(test)]
 mod test{
+    use super::*;
     #[test]
     fn test_cache(){
         panic!("!")

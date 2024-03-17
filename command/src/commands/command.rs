@@ -1,20 +1,28 @@
 use std::fs::File;
+use std::os::unix::fs::PermissionsExt;
 use std::sync::{Mutex, RwLock};
+use chrono::{Local, TimeZone};
 use std::{env, fs};
-use std::io::{self, Error, ErrorKind, Read};
+use std::io::{self, Error, ErrorKind, Read, Write};
 use std::path::Path;
 
 use lazy_static::lazy_static;
 
 // whoami
-pub fn whoami() -> String{
-    whoami::username()
+pub fn whoami(session_context: &mut SessionContext) -> String{
+    let mut res = session_context.get_username();
+    if session_context.user_state.root{
+        res = "root".to_string()
+    }
+
+    res
 }
+
 
 // help 
 pub fn help() -> String{
     let help = format!(
-    "Usage: <command> [arg] [options]
+    "Usage: <command> [options] [arg]
 \n\x1B[34mCommands:
     pwd  View current directory
     ls   View all files in the current directory
@@ -58,6 +66,71 @@ pub fn ls() -> io::Result<String> {
     } else {
         Err(Error::new(ErrorKind::NotFound, "Path is not a directory"))
     }
+}
+
+// ll
+pub fn ll(context: &SessionContext) -> io::Result<String>{
+    let dir_path = Path::new("./");
+    let mut result = String::new();
+    let dirs = fs::read_dir(dir_path)?;
+    for dir in dirs{
+        let dir = dir?;
+        let matadata = dir.metadata()?;
+        let file_type = dir.file_type()?;
+
+        // file type
+        let file_type_str = if file_type.is_dir(){
+            "d"
+        }else if file_type.is_file(){
+            "-"
+        }else if file_type.is_symlink(){
+            "l"
+        }else{
+            "?"
+        };
+
+        // file name
+        let file_name = if file_type.is_dir(){
+            format!("\x1B[32m{}    \x1B[0m", dir.path().display())
+        }else if file_type.is_file(){
+            dir.file_name().into_string().unwrap()
+        }else{
+            format!("\x1B[32m{}    \x1B[0m", dir.path().display())
+        };
+
+
+        // permission
+        let permission = if context.user_state.root{
+            let mode = matadata.permissions().mode();
+            format!("{:o}",mode&0o777)
+        }else{
+            "".to_string()
+        };
+
+        let owner = {
+            let owner_name = "root";
+            format!("{}", owner_name)
+        };
+        
+
+        let size = matadata.len();
+        
+        // 最后修改时间
+        let modified = matadata.modified()?;
+        let time = Local.timestamp_micros(modified.duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as i64);
+        let time_str = time.unwrap().format("%b %d %H:%M").to_string();
+
+        result.push_str(&format!(
+            "{} {} {:>8} {:>6} {} {}\n",
+            file_type_str,
+            permission,
+            owner,
+            size,
+            time_str,
+            file_name
+        ));
+    }
+    Ok(result)
 }
 
 // history
@@ -206,9 +279,11 @@ pub fn cat(file: &str) -> Result<String,Error>{
     Ok(buffer)
 }
 
+use crate::cache::CacheMap;
 use crate::commands::download::{download_package, find_package};
-// download
-pub fn download(name: &str) -> Result<(), Box<dyn std::error::Error>>{
+use crate::root::SessionContext;
+// apt
+pub fn apt(name: &str) -> Result<(), Box<dyn std::error::Error>>{
     match find_package(name) {
         Some(package) => {
             Ok(if let Err(err) = download_package(&package) {
@@ -225,49 +300,31 @@ use tar::Archive;
 use flate2::read::GzDecoder;
 use flate2::Compression;
 use flate2::write::GzEncoder;
-use super::arg::Commands;
+use super::arg::{execute_command, Commands};
 
-//
-pub fn tar(command: Commands, file: &str, to: &str) -> Result<(),std::io::Error>{
-    if command.command.as_str() == "tar"{
-        match command.option.as_str(){
-            "-h" => {
-                let s = format!(
-                    "
-                  tar -zxvf : tar file
-                  tar -xvf  : untar file
-                    "
-                );
-                println!("{}",s)
-            },
-            "-zxvf" => {
-                let _ = zxvf(file, to);
-            },
-            "-xvf" => {
-                let _ = xvf(to);
-            },
-            _ =>{
-                eprintln!("Can't support this arg")
-            }
-        }
-    }
-    Ok(())
-}
-
-pub fn zxvf(file: &str, to: &str) -> Result<(),std::io::Error>{
+pub fn zxvf(file: &str, to: &str) -> Result<String,std::io::Error>{
     let tar_gz = File::create(to)?;
     let enc = GzEncoder::new(tar_gz, Compression::default());
     let mut tar = tar::Builder::new(enc);
     tar.append_file(file, &mut File::open(file)?)?;
-    Ok(())
+    Ok("Compression over!".to_string())
 }
 
-pub fn xvf(to: &str) -> Result<(),std::io::Error>{
+pub fn xvf(to: &str) -> Result<String,std::io::Error>{
     let tar_gz = File::open(to)?;
     let tar = GzDecoder::new(tar_gz);
     let mut archive = Archive::new(tar);
     archive.unpack(".")?;
-    Ok(())
+    Ok("decompression over!".to_string())
 }
 
-// 重定向输出
+
+// 重定向输出   > 
+pub async fn stdout_file(commands: Commands,cache: CacheMap,session_context: &mut SessionContext) -> Result<String, std::io::Error>{
+    let command = commands.command.clone();
+    let arg = commands.arg.clone();
+    let result = execute_command(&command, "", &arg, session_context,cache.clone()).await?;
+    let mut file = File::create(arg[arg.len()-1].clone())?;
+    file.write_all(result.as_bytes())?;
+    Ok("write over!".to_string())
+}

@@ -1,6 +1,4 @@
 // root : usersname . password
-// struct : Commands add in the arg.rs
-// tar add in command 
 // apt : download software or txt in web
 
 use crate::commands::command::HISTROY;

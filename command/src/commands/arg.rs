@@ -1,18 +1,9 @@
-use std::io::Error;
-
-use async_trait::async_trait;
-
 use crate::cache::{Cache, CacheMap, Cache_get};
-use crate::commands::command::rename;
+use crate::commands::command::stdout_file;
 use crate::root::SessionContext;
 
 use super::code::{html, python};
-use super::command::{help, history, ls, turn_dir, turn_file};
-
-#[async_trait]
-pub trait Command {
-    async fn handle_command(cache: CacheMap, args: Vec<String>, session_context: &SessionContext);
-}
+use super::command::{history, ll, ls, rename, turn_dir, turn_file, whoami, xvf, zxvf};
 
 #[allow(dead_code)]
 #[derive(Debug,Clone)]
@@ -25,11 +16,15 @@ pub struct Commands{
 impl Commands {
     pub fn new(commands: Vec<String>) -> Commands{
         let len = commands.len();
-        let command = commands[0].clone();
+        let mut command = String::new();
         let mut option = String::new();
         let mut arg: Vec<String> = Vec::new();
         match len{
+            1=>{
+                command = commands[0].clone();
+            }
             2 =>{
+                command = commands[0].clone();
                 match commands[1].starts_with("-"){
                     true => {
                         option=commands[1].clone()
@@ -40,6 +35,15 @@ impl Commands {
                 }
             },
             _ =>{
+                command = commands[0].clone();
+                match commands[1].starts_with("-")|| commands[1]==">"{
+                    true => {
+                        option=commands[1].clone()
+                    },
+                    false =>{
+                        arg.push(commands[1].clone())
+                    }
+                }
                 option = commands[1].clone();
                 arg.append(&mut commands[2..=len-1].to_vec())
             }
@@ -50,109 +54,122 @@ impl Commands {
             arg
         }
     }
+}
 
-    pub fn find_help(command: Commands) -> String{
-        let mut res = String::new();
-        if command.option=="-h"{
-            let binding = help();
-            let s = binding.lines();
-            for i in s{
-                if command.option == "-h" && i.contains(&command.command){
-                    res = i.to_string()
-                }
-            }
-            res = "Can't found this command".to_string()
+pub async fn handle_command(cache: CacheMap, args: Vec<String>, session_context: &mut SessionContext) {
+    let commands = Commands::new(args.clone());
+    let command = commands.command.clone();
+
+    if session_context.user_state.root{
+        // Execute root commands
+        // Handle commands differently when user is in root mode
+        if let Ok(res) = command_match(commands.clone(), cache.clone(),session_context).await{
+            println!("{}",res)
         }
-        res
-    }
-}
-
-
-#[async_trait]
-impl Command for Commands{
-    // tar and find_help
-    async fn handle_command(cache: CacheMap, args: Vec<String>, session_context: &SessionContext) {
-        let len = args.len();
-        let command = &args[0];
-        if session_context.user_state.root && session_context.root.allowed_commands.contains(command) {
-            // Execute root commands
-            // Handle commands differently when user is in root mode
-            match len {
-                1 => {               
-                    let res = normal_command(cache.clone(), command).await.unwrap();
-                    println!("{}",res)
-                },
-                2 => {
-                    let path = &args[1];
-                    twice_option(command, path)
-                },
-                3 => {
-                    let source = &args[1]; 
-                    let now = &args[2];
-                    if *command == "rename".to_string(){
-                        let s = rename(source, now).unwrap();
-                        println!("{}",s);
-                    }
-                },
-                _ => {
-                    eprint!("404: Not Found")
-                }
-            }
-        } else if !session_context.user_state.root && !session_context.root.allowed_commands.contains(command) {
-            // Execute normal commands
-            // Handle commands normally when user is not in root mode
-            match len{
-                1 => {               
-                    let res = normal_command(cache.clone(), command).await.unwrap();
-                    println!("{}",res)
-                },
-                2 => {
-                    let path = &args[1];
-                    twice_option(command, path)
-                },
-                _ => {
-                    eprint!("404: Not Found")
-                }
-            }
-        }else{
-            eprintln!("Permission not support")
+    } else if !session_context.user_state.root && !session_context.root.allowed_commands.contains(&command) {
+        // Execute normal commands
+        // Handle commands normally when user is not in root mode
+        if let Ok(res) = command_match(commands.clone(), cache.clone(),session_context).await{
+            println!("{}",res)
         }
-    }
-}
-
-async fn normal_command(cache:CacheMap,command: &String) -> Result<String,Error>{
-    match command.as_str() {
-        "history" => {
-            history()
-        },
-        "ls"|"l" => {
-            ls()
-        },
-        _ => Ok({
-            let value = <Cache as Cache_get>::cache_get(cache.clone(), command.to_string()).await;
-            match value {
-                Some(ref s) => s.to_string(),
-                None => {
-                    eprintln!("Error: Can't found this \x1B[31m{}\x1B[0m",command);
-                    String::new()
-                }
-            }
-        })
-    }
-
-}
-
-fn twice_option(command: &String,path: &String){
-    if let Ok(res) = turn_file(command.clone(), path.clone()) {
-        println!("{}",res);
-    }else if let Ok(res) = turn_dir(command.clone(), path.clone()) {
-        println!("{}",res);
-    }else if let Ok(res) = run_code(command,Some(&path)){
-        println!("{}",res);
     }else{
-        eprintln!("Error: Can't found this: \x1B[33m{}\x1B[0m", command);
+        eprintln!("Permission not support")
     }
 }
+
+
+pub async fn command_match(commands: Commands,cache: CacheMap,session_context: &mut SessionContext) -> Result<String,std::io::Error>{
+    let command = commands.command.clone();
+    let option = commands.option.clone();
+    let arg = commands.arg.clone();
+    match option.as_str() {
+        ">" => stdout_file(commands,cache.clone(), session_context).await,
+        _ => execute_command(&command, &option, &arg, session_context, cache).await,
+    }
+}
+
+
+pub async fn execute_command(command: &str, option: &str, arg: &Vec<String>, session_context: &mut SessionContext, cache: CacheMap) -> Result<String, std::io::Error> {
+    match command {
+        "root" => {
+            session_context.user_state.toggle_root();
+            let s = format!("Switched to root mode: {}", session_context.user_state.root);
+            Ok(s)
+        },
+        "exit" => {
+            match option{
+                "-all" => {
+                    cache.clear();
+                    std::process::exit(0);
+                },
+                _=>{
+                    if session_context.user_state.root {
+                        session_context.user_state.exit_root();
+                        println!("Switched to root mode: {}", session_context.user_state.root);
+                    } else {
+                        cache.clear();
+                        std::process::exit(0);
+                    }
+                }
+            }
+            Ok("Exit".to_string())
+        },
+        "whoami" => Ok(whoami(session_context)),
+        "pd" => match option{
+            "-f"|"-fix" => session_context.user.revise_password(&arg[0].clone()),
+            "-c"|"-check"=>Ok(session_context.user.password.clone()),
+            _=>Err(std::io::Error::new(std::io::ErrorKind::Other, format!("Error: can't found tar {}", option))),
+        },
+        "ll" => {
+            let va = ll(&session_context).unwrap();
+            Ok(va)
+        },
+        _ => execute_other_command(command, option, arg, cache).await,
+    }
+}
+
+pub async fn execute_other_command(command: &str, option: &str, arg: &[String], cache: CacheMap) -> Result<String, std::io::Error> {
+    match command {
+        "history" => history(),
+        "ls" | "l" => ls(),
+        "cd" | "rm" | "mkdir" | "touch" | "python" | "html" | "web" | "cat" => {
+            turn_file_or_dir(command, &arg[0]).await
+        }
+        "tar" => match option {
+            "-zxvf" => zxvf(&arg[0], &arg[1]),
+            "-xvf" => xvf(&arg[0]),
+            _ => Err(std::io::Error::new(std::io::ErrorKind::Other, format!("Error: can't found tar {}", option))),
+        },
+        "rn" => rename(&arg[0], &arg[1]),
+        _ => match_cache_or_error(cache.clone(), command.to_string()).await,
+    }
+}
+
+async fn turn_file_or_dir(command: &str, arg: &str) -> Result<String, std::io::Error> {
+    if let Ok(res) = turn_file(command.to_string(), arg.to_string()) {
+        Ok(res)
+    } else if let Ok(res) = turn_dir(command.to_string(), arg.to_string()) {
+        Ok(res)
+    } else if let Ok(res) = run_code(&command.to_string(), Some(arg)) {
+        Ok(res)
+    } else {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            format!("Error: Can't found this: \x1B[33m{}\x1B[0m", command),
+        ))
+    }
+}
+
+async fn match_cache_or_error(cache: CacheMap, command: String) -> Result<String, std::io::Error> {
+    match <Cache as Cache_get>::cache_get(cache.clone(), command.to_string()).await {
+        Some(s) => Ok(s.to_string()),
+        None => {
+            eprintln!("Error: Can't found this \x1B[31m{}\x1B[0m", command);
+            Ok(String::new())
+        }
+    }
+}
+
 
 fn run_code(command: &String,file: Option<&str>) -> Result<String,std::io::Error>{
     match command.as_str() {
@@ -169,43 +186,5 @@ Command '{}' not found, did you mean:
         ",command,command);
             apt
         }) 
-    }
-}
-
-async fn root_command(len: usize,cache: CacheMap,command: Commands){
-    match len {
-        1 => {               
-            let res = normal_command(cache.clone(), &command.command).await.unwrap();
-            println!("{}",res)
-        },
-        2 => {
-            twice_option(&command.command, &command.arg[0])
-        },
-        3 => {
-            let source = &command.arg[0]; 
-            let now = &command.arg[1];
-            if command.command == "rename".to_string(){
-                let s = rename(source, now).unwrap();
-                println!("{}",s);
-            }
-        },
-        _ => {
-            eprint!("404: Not Found")
-        }
-    }
-}
-
-async fn user_command(len: usize,cache: CacheMap,command: Commands){
-    match len {
-        1 => {               
-            let res = normal_command(cache.clone(), &command.command).await.unwrap();
-            println!("{}",res)
-        },
-        2 => {
-            twice_option(&command.command, &command.arg[0])
-        },
-        _ => {
-            eprint!("404: Not Found")
-        }
     }
 }
