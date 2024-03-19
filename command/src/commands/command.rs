@@ -1,12 +1,13 @@
 use std::fs::File;
-use std::os::unix::fs::PermissionsExt;
+use std::os::unix::fs::MetadataExt;
+use std::process::Command;
 use std::sync::{Mutex, RwLock};
-use chrono::{Local, TimeZone};
 use std::{env, fs};
 use std::io::{self, Error, ErrorKind, Read, Write};
 use std::path::Path;
 
 use lazy_static::lazy_static;
+
 
 // whoami
 pub fn whoami(session_context: &mut SessionContext) -> String{
@@ -23,25 +24,21 @@ pub fn whoami(session_context: &mut SessionContext) -> String{
 pub fn help() -> String{
     let help = format!(
     "Usage: <command> [options] [arg]
-\n\x1B[34mCommands:
-    pwd  View current directory
-    ls   View all files in the current directory
-    cd   Change directory   
-    rm   delete directory or file  
-    rn   rename directory or file  
-    touch   create a new file
-    mkdir   create a new directory
-    history   View past Commands
-    cat     view file only read
-    mv      move file's path
-    python  run code in python
-    html    open html file
-    apt     download file or software
-    tar -zxvf : Compression    tar -xvf  : decompression
-    exit    exit this process\x1B[0m\n"
+\0\x1B[32mCommands:
+    pwd     View current directory                         apt -i ..   Install package
+    ls      View all files in the current directory        history     View past Commands
+    cd      Change directory                               whoami  ||  apt -update version
+    rm      Delete directory or file                       rn          Rename directory or file  
+    touch   Create a new file                              mkdir       Create a new directory
+    cat     View file only read                            mv          Move file's path
+    python  Run code in python                             tar -zxvf:  Compression  
+    html    Open html file                                 tar -xvf:   Decompression
+    exit    Exit this process\0\x1B[0m\n"
     );
+
     help
 }
+
 
 // pwd
 pub fn pwd() -> String{
@@ -49,10 +46,12 @@ pub fn pwd() -> String{
     path
 }
 
+
 // ls
 pub fn ls() -> io::Result<String> { 
     let dir_path = Path::new("./");
     let mut result = String::new();
+
     if dir_path.is_dir() {
         for entry in fs::read_dir(dir_path)? {
             let entry = entry?;
@@ -67,6 +66,7 @@ pub fn ls() -> io::Result<String> {
         Err(Error::new(ErrorKind::NotFound, "Path is not a directory"))
     }
 }
+
 
 // ll
 pub fn ll(context: &SessionContext) -> io::Result<String>{
@@ -100,67 +100,83 @@ pub fn ll(context: &SessionContext) -> io::Result<String>{
 
 
         // permission
-        let permission = if context.user_state.root{
-            let mode = matadata.permissions().mode();
-            format!("{:o}",mode&0o777)
-        }else{
-            "".to_string()
+        let uid = matadata.uid();
+        let gid = matadata.gid();
+
+        let output_o = match uid{
+            1000=>context.get_username(),
+            0=>"root".to_string(),
+            _=>"-".to_string()
         };
 
-        let owner = {
-            let owner_name = "root";
-            format!("{}", owner_name)
+        let output_p = match gid{
+            1000=>context.get_username(),
+            0=>"root".to_string(),
+            _=>"-".to_string()
         };
         
 
         let size = matadata.len();
         
-        // 最后修改时间
-        let modified = matadata.modified()?;
-        let time = Local.timestamp_micros(modified.duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as i64);
-        let time_str = time.unwrap().format("%b %d %H:%M").to_string();
 
+        // created time
+        let path = dir.path();
+        let s = path.as_os_str().to_str().unwrap();
+        let time = file_create_time(s);
+
+        // output
         result.push_str(&format!(
-            "{} {} {:>8} {:>6} {} {}\n",
+            "{} {}  {:>8}   {:>6} {}  {}\n",
             file_type_str,
-            permission,
-            owner,
+            output_p,
+            output_o,
             size,
-            time_str,
+            time,
             file_name
         ));
     }
     Ok(result)
 }
 
+
 // history
 lazy_static!{
     pub static ref HISTROY: Mutex<Vec<String>> = Mutex::new(Vec::new());
 }
+
+
 pub fn history_push(command: String){
     let mut history = HISTROY.lock().unwrap();
     history.push(command); 
 }
+
 
 pub fn history() -> Result<String,Error>{
     let s = HISTROY.lock().unwrap();
     for (i,c) in s.iter().enumerate(){
         println!("{}: {}",i,c);
     }
-    Ok(String::new())
+
+    let res = String::new().trim().to_owned();
+    Ok(res)
 }
+
 
 // cd
 pub fn cd(path: &str) -> Result<String,Error>{
     let new_path = Path::new(path);
     env::set_current_dir(new_path)?;
-    Ok("cd over!".to_string())
+
+    let res = format!("Successfully changed directory to {}.",path);
+    Ok(res)
 }
+
 
 // new dir
 lazy_static!{
     pub static ref DIR: RwLock<&'static str> = RwLock::new("");
 }
+
 
 pub fn turn_dir(command: String, dir: String) -> Result<String,Error>{
     let mut dir_lock = DIR.write().unwrap();
@@ -185,10 +201,12 @@ pub fn turn_dir(command: String, dir: String) -> Result<String,Error>{
     }
 }
 
+
 // new file 
 lazy_static! {
     pub static ref FILE: RwLock<&'static str> = RwLock::new("");
 }
+
 
 pub fn turn_file(command: String,file: String) -> Result<String, Error> {
     let mut file_lock = FILE.write().unwrap();
@@ -213,14 +231,18 @@ pub fn turn_file(command: String,file: String) -> Result<String, Error> {
     }
 }
 
+
 //touch
 pub fn touch(file: &str) -> Result<String,std::io::Error>{
     if file.is_empty(){
         return Ok("there is None".to_string());
     }
     let _ = fs::File::create_new(Path::new(file))?;
-    Ok("create over!".to_string())
+
+    let res = format!("Successfully created {}",file);
+    Ok(res)
 }
+
 
 // mkdir
 pub fn mkdir(dir: &str) -> Result<String,std::io::Error>{
@@ -229,8 +251,11 @@ pub fn mkdir(dir: &str) -> Result<String,std::io::Error>{
     }
     let mut builder = fs::DirBuilder::new();
     let _ = builder.recursive(true).create(Path::new(dir));
-    Ok("create over!".to_string())
+
+    let res = format!("Successfully created {}",dir);
+    Ok(res)
 }
+
 
 // rm
 pub fn rm(file: &str) -> Result<String,std::io::Error>{
@@ -246,25 +271,20 @@ pub fn rm(file: &str) -> Result<String,std::io::Error>{
             let _ = fs::remove_file(filepath);
         }
     }
-    Ok("remove over!".to_string())
+
+    let res = String::new().trim().to_owned();
+    Ok(res)
 }
 
-// rn
+
+// rn mv
 pub fn rename(source:&str,now:&str) -> std::io::Result<String> {
     if source.is_empty(){
         return Ok("there is None".to_string());
     }
     let _ = fs::rename(source, now);
-    Ok(String::new())
-}
-
-// mv
-pub fn move_file(source:&str,_now:&str) -> std::io::Result<String>{
-    if source.is_empty(){
-       return Ok("there is None".to_string());
-    }
-
-    Ok(String::new())
+    let res = String::new().trim().to_owned();
+    Ok(res)
 }
 
 
@@ -279,22 +299,61 @@ pub fn cat(file: &str) -> Result<String,Error>{
     Ok(buffer)
 }
 
+
 use crate::cache::CacheMap;
 use crate::commands::download::{download_package, find_package};
+use crate::get::get_hty::file_create_time;
+use super::download::update;
 use crate::root::SessionContext;
-// apt
-pub fn apt(name: &str) -> Result<(), Box<dyn std::error::Error>>{
+
+
+// apt -install  xxx
+pub fn apt(name: &str) -> io::Result<String>{
+    if name.is_empty(){
+        return Ok("Error: Missing parameters".to_string());
+    }
     match find_package(name) {
         Some(package) => {
-            Ok(if let Err(err) = download_package(&package) {
+            if let Err(err) = download_package(&package) {
                 eprintln!("Error: {}", err);
-            })
+            }
         },
-        None => Ok({
+        None => {
             eprintln!("Package {} not found.", name);
-        })
+        }
     }
+
+    let res = format!("Successfully download Package {}",name);
+    Ok(res)
 }
+
+
+// apt -update xxx
+pub fn update_new(version: &str) -> io::Result<String>{
+    if version.is_empty(){
+        return Ok("Error: Missing parameters".to_string());
+    }
+    match update(&version) {
+        Ok(_) => {
+            let script_path = dirs::home_dir().unwrap().join(".Tiks").join("update_script.sh");
+            let output = Command::new("bash")
+                .arg(script_path.clone())
+                .output()
+                .expect("Error: network error....");
+            if output.status.success() {
+                let _ = std::fs::remove_file(script_path);
+            }
+        }
+        Err(_) => {
+            let err = format!("The current version is the latest one");
+            return Ok(err);
+        },
+    }
+
+    let res = format!("Successfully Update version {}",version);
+    Ok(res)
+}
+
 
 use tar::Archive;
 use flate2::read::GzDecoder;
@@ -302,20 +361,28 @@ use flate2::Compression;
 use flate2::write::GzEncoder;
 use super::arg::{execute_command, Commands};
 
+
 pub fn zxvf(file: &str, to: &str) -> Result<String,std::io::Error>{
+    if file.is_empty() || to.is_empty(){
+        return Ok("Error: Missing parameters".to_string());
+    }
     let tar_gz = File::create(to)?;
     let enc = GzEncoder::new(tar_gz, Compression::default());
     let mut tar = tar::Builder::new(enc);
     tar.append_file(file, &mut File::open(file)?)?;
-    Ok("Compression over!".to_string())
+    Ok("Successfully Compression".to_string())
 }
 
+
 pub fn xvf(to: &str) -> Result<String,std::io::Error>{
+    if to.is_empty(){
+        return Ok("Error: Missing parameters".to_string());
+    }
     let tar_gz = File::open(to)?;
     let tar = GzDecoder::new(tar_gz);
     let mut archive = Archive::new(tar);
     archive.unpack(".")?;
-    Ok("decompression over!".to_string())
+    Ok("Successfully Decompression".to_string())
 }
 
 
@@ -327,4 +394,48 @@ pub async fn stdout_file(commands: Commands,cache: CacheMap,session_context: &mu
     let mut file = File::create(arg[arg.len()-1].clone())?;
     file.write_all(result.as_bytes())?;
     Ok("write over!".to_string())
+}
+
+
+// cp
+#[allow(unused_assignments)]
+pub fn cp(source:&str, to: &str) -> io::Result<String>{
+    if source.is_empty() || to.is_empty(){
+        return Ok("Error: Missing parameters".to_string());
+    }
+
+    let file = fs::read(source)?;
+
+    let result = fs::write(to, file);
+    let mut output = String::new();
+    match result.is_ok(){
+        true => {
+            output = format!("Successfully to copy {}",to);
+        },
+        false =>{
+            output = format!("Error: copy {} to {} failed",source,to);
+        }
+    }
+
+    Ok(output)
+}
+
+
+// sudo
+#[allow(unused_assignments)]
+pub fn sudo(session_context: &mut SessionContext)->io::Result<String>{
+    loop{
+        let mut output = String::new();
+        let user = session_context.get_username();
+        println!("[sudo] password for {}:",user);
+        let pd = rpassword::read_password().unwrap();
+        let res = session_context.toggle_root(pd);
+        if res.is_ok() {
+            output = format!("Sucessfully to change root");
+            return Ok(output);
+        } else {
+            println!("Sorry, try again");
+            continue;
+        }
+    }
 }

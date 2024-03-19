@@ -52,8 +52,11 @@ impl User{
     }
 
     pub fn revise_password(&self, password: &str) -> Result<String, std::io::Error> {
-        let _ = self.password == password;
-        Ok("revises over!".to_string())
+        let new_pd = encryption(password.to_string());
+        let _ = self.password == new_pd;
+
+        let output = format!("Successfully revises the password");
+        Ok(output)
     }
 
     pub fn has_set_password(&self) -> bool {
@@ -120,8 +123,9 @@ impl SessionContext{
 
                 get_username(&mut user);
                 let password = get_password();
+                let pd = encryption(password);
 
-                let user = User::new(user, password, false);
+                let user = User::new(user, pd, false);
                 user.save_to_file(&user_file_path).expect("Failed to save user");
                 user
             }
@@ -134,8 +138,20 @@ impl SessionContext{
         }
     }
     pub fn get_username(&self) -> String{
-        let s = self.user.username.clone().trim().to_string();
-        s
+        let name = self.user.username.clone().trim().to_string();
+        name
+    }
+
+    
+    pub fn toggle_root(&mut self,password:String) -> io::Result<()>{
+        let user_pd = self.user.password.clone();
+        let pd = decryption(user_pd);
+        if password == pd {
+            self.user_state.toggle_root();
+            Ok(())
+        } else {
+            Err(io::Error::new(io::ErrorKind::Other, "Incorrect password"))
+        }
     }
 }
 
@@ -161,7 +177,34 @@ fn get_password() -> String{
     }
 }
 
-// for each os
+use std::str;
+#[allow(deprecated)]
+use base64::{encode, decode};
+// base64
+// 加密
+#[allow(deprecated)]
+fn encryption(pd: String) -> String{
+    let res = encode(pd.clone());
+    res
+}
+
+// 解密
+#[allow(deprecated)]
+pub fn decryption(pd: String) -> String{
+    let code = decode(pd.clone());
+    match code{
+        Ok(res) =>{
+            let password = std::str::from_utf8(&res).unwrap().to_string();
+            password
+        },
+        Err(_)=>{
+            let output = format!("The password does not exist");
+            output
+        }
+    }
+}
+
+// for every os
 fn init_setup(){
     Command::new("bash")
     .arg("setup.sh")

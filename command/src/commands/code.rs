@@ -17,7 +17,7 @@ Command 'python' not found, did you mean:
         ");
         return Ok(help);
     }
-    Ok("code run over!".to_string())
+    Ok("\ncode run over!".to_string())
 }
 
 

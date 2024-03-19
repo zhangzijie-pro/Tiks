@@ -3,14 +3,18 @@
 // there is some error or other suggestions contact me : zzj01262022@163.com
 // Cargo run
 
-use command::{cache::initialize_command_cache, commands::{arg::handle_command, command::{history_push, pwd}}, root::SessionContext};
+use command::cache::initialize_command_cache;
+use command::get::get_hty::get_last;
+use command::root::SessionContext;
+use command::commands::arg::handle_command;
+use command::commands::command::{history_push,pwd};
 use command::start_logo;
 use std::io::{self, Write};
-use command::get::get_hty::get_last;
+
 
 #[tokio::main]
 async fn main() {
-        start_logo::strat_logo();
+        start_logo::start_logo();
         let cache = initialize_command_cache().await;
         let mut session_context = SessionContext::new();
         loop {
@@ -60,7 +64,6 @@ fn print_prompt(session_context: &mut SessionContext) {
 
 #[cfg(test)]
 mod test{
-    use super::*;
     #[test]
     fn test_cache(){
         panic!("!")

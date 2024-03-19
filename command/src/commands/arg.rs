@@ -1,18 +1,19 @@
 use crate::cache::{Cache, CacheMap, Cache_get};
 use crate::commands::command::stdout_file;
-use crate::root::SessionContext;
+use crate::root::{decryption, SessionContext};
 
 use super::code::{html, python};
-use super::command::{history, ll, ls, rename, turn_dir, turn_file, whoami, xvf, zxvf};
+use super::command::{apt, cp, history, ll, ls, rename, sudo, turn_dir, turn_file, update_new, whoami, xvf, zxvf};
 
 #[allow(dead_code)]
-#[derive(Debug,Clone)]
+#[derive(Clone)]
 pub struct Commands{
     pub command: String,
     pub option: String,
     pub arg: Vec<String>
 }
 
+#[allow(unused_assignments)]
 impl Commands {
     pub fn new(commands: Vec<String>) -> Commands{
         let len = commands.len();
@@ -56,6 +57,7 @@ impl Commands {
     }
 }
 
+
 pub async fn handle_command(cache: CacheMap, args: Vec<String>, session_context: &mut SessionContext) {
     let commands = Commands::new(args.clone());
     let command = commands.command.clone();
@@ -88,13 +90,12 @@ pub async fn command_match(commands: Commands,cache: CacheMap,session_context: &
     }
 }
 
-
+#[allow(unused_assignments)]
 pub async fn execute_command(command: &str, option: &str, arg: &Vec<String>, session_context: &mut SessionContext, cache: CacheMap) -> Result<String, std::io::Error> {
     match command {
         "root" => {
-            session_context.user_state.toggle_root();
-            let s = format!("Switched to root mode: {}", session_context.user_state.root);
-            Ok(s)
+            let output = sudo(session_context);
+            output
         },
         "exit" => {
             match option{
@@ -114,11 +115,29 @@ pub async fn execute_command(command: &str, option: &str, arg: &Vec<String>, ses
             }
             Ok("Exit".to_string())
         },
+        "apt"=>match option{ // arg
+            "-i"|"-install"=>match arg.is_empty(){
+                true=>Ok("Error: Missing parameters".to_string()),
+                false=>apt(&arg[0].clone())
+            }
+            "-u"|"-update"=>match arg.is_empty(){
+                true=>Ok("Error: Missing parameters".to_string()),
+                false=>update_new(&arg[0].clone())
+            }
+            _=>Err(std::io::Error::new(std::io::ErrorKind::Other, format!("Error: can't found apt {}", option)))
+        },
         "whoami" => Ok(whoami(session_context)),
-        "pd" => match option{
-            "-f"|"-fix" => session_context.user.revise_password(&arg[0].clone()),
-            "-c"|"-check"=>Ok(session_context.user.password.clone()),
-            _=>Err(std::io::Error::new(std::io::ErrorKind::Other, format!("Error: can't found tar {}", option))),
+        "pd" => match option{  // match arg empty
+            "-f"|"-fix" => match arg.is_empty(){
+                true=>Ok("Error: Missing parameters".to_string()),
+                false=>session_context.user.revise_password(&arg[0].clone())
+            }
+            "-c"|"-check"=>Ok({
+                let pd = session_context.user.password.clone();
+                let password = decryption(pd.clone());
+                password
+            }),
+            _=>Err(std::io::Error::new(std::io::ErrorKind::Other, format!("Error: can't found pd {}", option))),
         },
         "ll" => {
             let va = ll(&session_context).unwrap();
@@ -128,19 +147,34 @@ pub async fn execute_command(command: &str, option: &str, arg: &Vec<String>, ses
     }
 }
 
+// match has arg's function
 pub async fn execute_other_command(command: &str, option: &str, arg: &[String], cache: CacheMap) -> Result<String, std::io::Error> {
     match command {
         "history" => history(),
         "ls" | "l" => ls(),
-        "cd" | "rm" | "mkdir" | "touch" | "python" | "html" | "web" | "cat" => {
-            turn_file_or_dir(command, &arg[0]).await
+        "cd" | "rm" | "mkdir" | "touch" | "python" | "html" | "web" | "cat" => match arg.is_empty(){
+            true=>Ok("Error: Missing parameters".to_string()),
+            false=>turn_file_or_dir(command, &arg[0]).await
         }
         "tar" => match option {
-            "-zxvf" => zxvf(&arg[0], &arg[1]),
-            "-xvf" => xvf(&arg[0]),
+            "-zxvf" => match arg.is_empty(){
+                true=>Ok("Error: Missing parameters".to_string()),
+                false=>zxvf(&arg[0], &arg[1]),
+            } 
+            "-xvf" => match arg.is_empty(){
+                true=>Ok("Error: Missing parameters".to_string()),
+                false=> xvf(&arg[0]),
+            }
             _ => Err(std::io::Error::new(std::io::ErrorKind::Other, format!("Error: can't found tar {}", option))),
         },
-        "rn" => rename(&arg[0], &arg[1]),
+        "rn"|"mv" =>match arg.is_empty(){
+            true=>Ok("Error: Missing parameters".to_string()),
+            false=>  rename(&arg[0], &arg[1]),
+        }
+        "cp"=> match arg.is_empty(){
+            true=>Ok("Error: Missing parameters".to_string()),
+            false=>cp(&arg[0], &arg[1]),
+        }
         _ => match_cache_or_error(cache.clone(), command.to_string()).await,
     }
 }

@@ -1,9 +1,11 @@
 // as linux "apt" to download some file or software
 
 // download file in web such as : http:*********
-use std::{fs::File, process::Command};
-use std::io::copy;
+use std::fs::File;
+use std::io::{copy, Write};
 use reqwest::Client;
+
+use super::command::xvf;
 
 #[allow(dead_code)]
 pub struct Package{
@@ -12,6 +14,7 @@ pub struct Package{
     download_link: String,
 }
 
+// apt install 
 impl Package{
     pub  fn new(name: String, version: String, download_link: String) -> Package{
         Package{
@@ -32,16 +35,8 @@ pub fn find_package(name: &str) -> Option<Package>{
 pub fn download_package(package: &Package) -> Result<(),Box<dyn std::error::Error>>{
     let _ = download(&package.download_link, &format!("{}.tar.gz",package.name));
     // 解压缩并安装
-    let output = Command::new("")
-        .arg("")
-        .arg(format!("{}.tar.gz", package.name))
-        .output()?;
-    
-    if output.status.success() {
-        println!("Package {} installed successfully.", package.name);
-    } else {
-        eprintln!("Failed to install package {}.", package.name);
-    }
+    let file = format!("{}.tar.gz", package.name);
+    let _ = xvf(&file).expect("Failed to install package.");
 
     Ok(())
 }
@@ -57,5 +52,26 @@ async fn download(link: &str, filename: &str) -> Result<(),Box<dyn std::error::E
     let mut file = File::create(filename).unwrap();
 
     copy(&mut response.bytes().await.unwrap().as_ref(), &mut file)?;
+    Ok(())
+}
+
+
+use dirs;
+// apt update new
+pub fn update(version: &str) -> std::io::Result<()>{
+    let home = dirs::home_dir().unwrap();
+    let app_dir = home.join(".Tiks");
+    let app = app_dir.join("update_script.sh");
+
+    let mut file = std::fs::File::create(&app).unwrap();
+    let update = format!("
+#!/bin/bash
+cd \"{}\"
+git pull origin {}
+",app_dir.display(),version);
+
+    let u = update.as_bytes();
+    let _ = file.write(u);
+
     Ok(())
 }
