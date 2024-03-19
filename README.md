@@ -1,15 +1,9 @@
 ## Tiks - 简易 Linux 终端命令行工具
 
 欢迎使用 Tiks，一个简易的 Linux 终端命令行工具，类似于常见的 Linux 终端环境，提供了一系列常用的命令和功能。
-![Project Logo](images/new.png)
+#### 供参考，若有错误改进地方可push到main
 
-## Table of Contents
-- [GitHub](https://github.com/yourusername/yourproject)
-- [Introduction](#使用方法)
-- [Features](#功能特点s)
-- [Installation](#贡献)
-- [Usage](#使用方法)
-- [License](#许可证)
+![Project Logo](images/new.png)
 
 ## 功能特点
 
