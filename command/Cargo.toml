@@ -27,3 +27,7 @@ termion = "3.0.0"
 [[bin]]
 name = "main"
 path = "bin/main.rs"
+
+
+[build-dependencies]
+cc = "1.0.90"

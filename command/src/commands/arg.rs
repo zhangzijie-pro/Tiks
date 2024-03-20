@@ -1,9 +1,10 @@
 use crate::cache::{Cache, CacheMap, Cache_get};
 use crate::commands::command::stdout_file;
+use crate::get::get_hty::get_similar;
 use crate::root::{decryption, SessionContext};
 
 use super::code::{html, python};
-use super::command::{apt, cp, history, ll, ls, rename, sudo, turn_dir, turn_file, update_new, whoami, xvf, zxvf};
+use super::command::{apt, cp, get_time, history, ll, ls, rename, sudo, turn_dir, turn_file, update_new, whoami, xvf, zxvf};
 
 #[allow(dead_code)]
 #[derive(Clone)]
@@ -150,6 +151,7 @@ pub async fn execute_command(command: &str, option: &str, arg: &Vec<String>, ses
 // match has arg's function
 pub async fn execute_other_command(command: &str, option: &str, arg: &[String], cache: CacheMap) -> Result<String, std::io::Error> {
     match command {
+        "time" => get_time(),
         "history" => history(),
         "ls" | "l" => ls(),
         "cd" | "rm" | "mkdir" | "touch" | "python" | "html" | "web" | "cat" => match arg.is_empty(){
@@ -198,8 +200,13 @@ async fn match_cache_or_error(cache: CacheMap, command: String) -> Result<String
     match <Cache as Cache_get>::cache_get(cache.clone(), command.to_string()).await {
         Some(s) => Ok(s.to_string()),
         None => {
-            eprintln!("Error: Can't found this \x1B[31m{}\x1B[0m", command);
-            Ok(String::new())
+            let similar = get_similar(&command).join("    ");
+            let output = format!("
+Error: Can't found this \x1B[31m{}\x1B[0m
+    Did you mean?
+{}", command,similar
+            );
+            Ok(output)
         }
     }
 }

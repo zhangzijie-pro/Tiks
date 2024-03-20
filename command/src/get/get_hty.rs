@@ -53,3 +53,48 @@ pub fn file_create_time(path: &str) -> String{
     }
     time
 }
+
+
+// get similar command
+pub fn get_similar(arg: &str) -> Vec<String>{
+    let commands = vec!["ls","pwd","pd","history","whoami","help","ll","cd","mv","cp","rn","tar","rm","mkdir","touch","python","html","web","cat","exit","root","apt"];
+    let mut output = Vec::new();
+    let threshold = 1;
+    for command in commands {
+        if levenshtein_distance(arg, command) <= threshold{
+            output.push(command.to_string())
+        }
+    }
+    output
+}
+
+fn levenshtein_distance(arg:&str,command:&str) -> usize{
+    let len1 = arg.chars().count();
+    let len2 = command.chars().count();
+
+    let mut dp = vec![vec![0;len2+1];len1+1];
+
+    for i in 0..=len1 {
+        dp[i][0] = i;
+    }
+
+    for j in 0..=len2 {
+        dp[0][j] = j;
+    }
+
+    for (i,c) in arg.chars().enumerate(){
+        for (j,c2) in command.chars().enumerate(){
+            let cost = if c==c2{0}else{1};
+            dp[i + 1][j + 1] = *[
+                dp[i][j + 1] + 1,
+                dp[i + 1][j] + 1,
+                dp[i][j] + cost,
+            ]
+            .iter()
+            .min()
+            .unwrap();
+        }
+    }
+    dp[len1][len2]
+
+}

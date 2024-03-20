@@ -1,6 +1,9 @@
 // This is a Simple Terimal in RUST
 //  Tiks
-// there is some error or other suggestions contact me : zzj01262022@163.com
+// Provided for your reference and learning. If there are any improvements or errors.
+// You can git push to main. Welcome everyone to collaborate and improve together
+
+// There is some error or other suggestions contact me : zzj01262022@163.com
 // Cargo run
 
 use command::cache::initialize_command_cache;
@@ -60,12 +63,4 @@ fn print_prompt(session_context: &mut SessionContext) {
     let input = format!("\x1B[32;1m{}\x1B[0m:\x1B[34m{}>>\x1B[0m ",whoami,pwd()); // Assuming whoami() returns the current user
     print!("{}",input);
     io::stdout().flush().unwrap();
-}
-
-#[cfg(test)]
-mod test{
-    #[test]
-    fn test_cache(){
-        panic!("!")
-    }
 }

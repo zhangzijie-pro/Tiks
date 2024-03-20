@@ -343,6 +343,8 @@ pub fn update_new(version: &str) -> io::Result<String>{
             if output.status.success() {
                 let _ = std::fs::remove_file(script_path);
             }
+            let res = format!("Successfully Update version {}",version);
+            Ok(res)
         }
         Err(_) => {
             let err = format!("The current version is the latest one");
@@ -350,8 +352,6 @@ pub fn update_new(version: &str) -> io::Result<String>{
         },
     }
 
-    let res = format!("Successfully Update version {}",version);
-    Ok(res)
 }
 
 
@@ -438,4 +438,14 @@ pub fn sudo(session_context: &mut SessionContext)->io::Result<String>{
             continue;
         }
     }
+}
+
+
+// get time
+use chrono;
+pub fn get_time() -> io::Result<String>{
+    let now = chrono::Local::now();
+    let time = now.format("%Y-%m-%d %H:%M:%S").to_string();
+
+    Ok(time)
 }
