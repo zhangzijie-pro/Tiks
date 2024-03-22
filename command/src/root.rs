@@ -1,7 +1,9 @@
 // build root
+
 pub struct UserState{
     pub root: bool
 }
+
 pub struct Root {
     pub allowed_commands: Vec<String>,
 }
@@ -30,6 +32,7 @@ use std::io::{self,Write};
 use std::fs;
 use std::process::Command;
 use dirs;
+
 
 pub struct User{
     pub username: String,
@@ -99,7 +102,7 @@ impl SessionContext{
         let userstate = UserState::new(); //false
 
         let home_dir = dirs::home_dir().expect("Failed to get home directory");
-        let binding = home_dir.join(".Tiks").join("tiks");
+        let binding = home_dir.join(".Tiks").join("tiks");  // create dir in setup.sh
         let user_file_path = binding.as_os_str().to_str().unwrap();
 
         let user = match User::load_from_file(&user_file_path){
@@ -118,7 +121,12 @@ impl SessionContext{
                 }
             },
             Err(_) =>{
-                init_setup();
+                #[cfg(target_os="linux")]
+                init_setup_linux();
+                #[cfg(target_os="mac")]
+                init_setup_mac();
+                #[cfg(target_os="windows")]
+                init_setup_windows();
                 let mut user = String::new();
 
                 get_username(&mut user);
@@ -204,10 +212,29 @@ pub fn decryption(pd: String) -> String{
     }
 }
 
+
 // for every os
-fn init_setup(){
+#[cfg(target_os="linux")]
+fn init_setup_linux(){
     Command::new("bash")
-    .arg("setup.sh")
+    .arg("./mac_linux/setup.sh")
     .spawn()
     .expect("Error: Can't setup");
+}
+
+#[cfg(target_os="mac")]
+fn init_setup_mac() {
+    Command::new("bash")
+        .arg("setup.sh")
+        .spawn()
+        .expect("Error: Can't setup on macOS");
+}
+
+#[cfg(target_os="windows")]
+fn init_setup_windows() {
+    Command::new("cmd")
+        .arg("/C")
+        .arg("setup.bat")
+        .spawn()
+        .expect("Error: Can't setup on Windows");
 }

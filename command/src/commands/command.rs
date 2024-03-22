@@ -3,7 +3,7 @@ use std::os::unix::fs::MetadataExt;
 use std::process::Command;
 use std::sync::{Mutex, RwLock};
 use std::{env, fs};
-use std::io::{self, Error, ErrorKind, Read, Write};
+use std::io::{self, BufRead, Error, ErrorKind, Read, Write};
 use std::path::Path;
 
 use lazy_static::lazy_static;
@@ -359,7 +359,7 @@ use tar::Archive;
 use flate2::read::GzDecoder;
 use flate2::Compression;
 use flate2::write::GzEncoder;
-use super::arg::{execute_command, Commands};
+use super::arg::{execute_command, execute_other_command, split, Commands};
 
 
 pub fn zxvf(file: &str, to: &str) -> Result<String,std::io::Error>{
@@ -448,4 +448,85 @@ pub fn get_time() -> io::Result<String>{
     let time = now.format("%Y-%m-%d %H:%M:%S").to_string();
 
     Ok(time)
+}
+
+// grep
+pub fn grep(pattern:&str,arg: &str) -> io::Result<String>{
+    if arg.is_empty(){
+        return Ok("Error: Missing parameters".to_string());
+    }
+
+    let mut output = String::new();
+
+    if let Ok(file) = File::open(arg){
+        let reader = io::BufReader::new(file);
+    
+        for line in reader.lines(){
+            let line = line?;
+            if line.contains(pattern){
+                let replaced_string = line.replace(pattern, &&format!("\x1b[31m{}\x1b[0m", pattern));
+                output.push_str(&replaced_string);
+                output.push_str("\n");
+            }
+        }
+    }else {
+        let string_w = arg.split_whitespace();
+        for i in string_w{
+            if i.contains(pattern){
+                let replaced_string = i.replace(pattern, &&format!("\x1b[31m{}\x1b[0m", pattern));
+                output.push_str(&replaced_string);
+                output.push_str("\n");
+            }
+        }
+    }
+
+
+    if output.is_empty(){
+        let _ = output.trim();
+    }
+
+    Ok(output)
+}
+
+
+
+// | pipe
+#[allow(unused_assignments)]
+pub async fn pipe(command:Vec<String>,cache: CacheMap) -> io::Result<String>{
+    let mut spilt_vec = command.split(|pipe| pipe.as_str()=="|");
+    let mut output = String::new();
+
+    let last_command = spilt_vec.next().map(|s| s.to_vec());
+    let next_command = spilt_vec.next().map(|s| s.to_vec());
+    if last_command.is_none() || next_command.is_none(){
+        output = format!("| ?");
+        return Ok(output)
+    }
+
+    let l = turn_command(last_command.unwrap());
+    let n = turn_command(next_command.unwrap());
+
+    let (command1,option1,arg1) = split(l.clone());
+    let (command2,option2,arg2) = split(n.clone());
+    
+    let result1 = execute_other_command(&command1, &option1, &arg1, cache.clone()).await?;
+    if command2=="grep"{
+        let result = grep(&arg2[0], &result1)?;
+        output = format!("{}",result)
+    }else{
+        let result2 = execute_other_command(&command2, &option2, &arg2, cache.clone()).await?;
+        output = format!("
+        {}
+        {}
+        ",result1,result2);
+    }
+
+    Ok(output)
+}
+
+
+// turn vec<_> to Commands
+fn  turn_command(v: Vec<String>) -> Commands{
+    let ouput = Commands::new(v);
+    ouput
 }

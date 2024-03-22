@@ -4,7 +4,7 @@ use crate::get::get_hty::get_similar;
 use crate::root::{decryption, SessionContext};
 
 use super::code::{html, python};
-use super::command::{apt, cp, get_time, history, ll, ls, rename, sudo, turn_dir, turn_file, update_new, whoami, xvf, zxvf};
+use super::command::{apt, cp, get_time, grep, history, ll, ls, pipe, rename, sudo, turn_dir, turn_file, update_new, whoami, xvf, zxvf};
 
 #[allow(dead_code)]
 #[derive(Clone)]
@@ -37,17 +37,21 @@ impl Commands {
                 }
             },
             _ =>{
-                command = commands[0].clone();
-                match commands[1].starts_with("-")|| commands[1]==">"{
-                    true => {
-                        option=commands[1].clone()
-                    },
-                    false =>{
-                        arg.push(commands[1].clone())
+                if commands.contains(&"|".to_string()){
+                    arg=commands;
+                }else{
+                    command = commands[0].clone();
+                    match commands[1].starts_with("-")|| commands[1]==">"{
+                        true => {
+                            option=commands[1].clone()
+                        },
+                        false =>{
+                            arg.push(commands[1].clone())
+                        }
                     }
+                    option = commands[1].clone();
+                    arg.append(&mut commands[2..=len-1].to_vec())
                 }
-                option = commands[1].clone();
-                arg.append(&mut commands[2..=len-1].to_vec())
             }
         }
         Commands{
@@ -80,15 +84,23 @@ pub async fn handle_command(cache: CacheMap, args: Vec<String>, session_context:
     }
 }
 
-
-pub async fn command_match(commands: Commands,cache: CacheMap,session_context: &mut SessionContext) -> Result<String,std::io::Error>{
+pub fn split(commands: Commands) -> (String,String,Vec<String>){
     let command = commands.command.clone();
     let option = commands.option.clone();
     let arg = commands.arg.clone();
-    match option.as_str() {
-        ">" => stdout_file(commands,cache.clone(), session_context).await,
-        _ => execute_command(&command, &option, &arg, session_context, cache).await,
+    (command,option,arg)
+}
+
+pub async fn command_match(commands: Commands,cache: CacheMap,session_context: &mut SessionContext) -> Result<String,std::io::Error>{
+    let (command,option,arg) = split(commands.clone());
+    match command.is_empty() && option.is_empty(){
+        true=>pipe(arg, cache).await,
+        false=>match option.as_str() {
+            ">" => stdout_file(commands,cache.clone(), session_context).await,
+            _ => execute_command(&command, &option, &arg, session_context, cache).await,
+        }
     }
+ 
 }
 
 #[allow(unused_assignments)]
@@ -154,6 +166,10 @@ pub async fn execute_other_command(command: &str, option: &str, arg: &[String], 
         "time" => get_time(),
         "history" => history(),
         "ls" | "l" => ls(),
+        "grep" => match arg.is_empty(){
+            true=>Ok("Error: Missing parameters".to_string()),
+            false=>grep(&arg[0], &arg[1])
+        }
         "cd" | "rm" | "mkdir" | "touch" | "python" | "html" | "web" | "cat" => match arg.is_empty(){
             true=>Ok("Error: Missing parameters".to_string()),
             false=>turn_file_or_dir(command, &arg[0]).await

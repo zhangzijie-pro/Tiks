@@ -59,15 +59,22 @@ async fn download(link: &str, filename: &str) -> Result<(),Box<dyn std::error::E
 use dirs;
 // apt update new
 pub fn update(version: &str) -> std::io::Result<()>{
+    let mut version = version;
     let home = dirs::home_dir().unwrap();
     let app_dir = home.join(".Tiks");
     let app = app_dir.join("update_script.sh");
 
     let mut file = std::fs::File::create(&app).unwrap();
+    if version=="1.0.0"{
+        version="main";
+    }
     let update = format!("
 #!/bin/bash
 cd \"{}\"
 git pull origin {}
+
+cargo clean
+cargo build
 ",app_dir.display(),version);
 
     let u = update.as_bytes();

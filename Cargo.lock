@@ -142,7 +142,6 @@ version = "1.0.0"
 dependencies = [
  "async-trait",
  "base64",
- "cc",
  "chrono",
  "dashmap",
  "dirs",
