@@ -225,7 +225,7 @@ fn init_setup_linux(){
 #[cfg(target_os="mac")]
 fn init_setup_mac() {
     Command::new("bash")
-        .arg("setup.sh")
+        .arg("./mac_linux/setup.sh")
         .spawn()
         .expect("Error: Can't setup on macOS");
 }
@@ -234,7 +234,7 @@ fn init_setup_mac() {
 fn init_setup_windows() {
     Command::new("cmd")
         .arg("/C")
-        .arg("setup.bat")
+        .arg("./window/setup.bat")
         .spawn()
         .expect("Error: Can't setup on Windows");
 }
