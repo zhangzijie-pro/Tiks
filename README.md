@@ -46,7 +46,7 @@ Commands:
 如果你希望贡献代码或改进本项目，请先进行以下操作：
 
 1. Fork 本项目
-2. 在你的本地克隆项目：\`git clone https://github.com/zhangzijie-pro/compress.git\`
+2. 在你的本地克隆项目：\`git clone https://github.com/zhangzijie-pro/Tiks.git\`
 3. 进入项目目录：\`cd 项目名称\`
 4. 运行代码：\`cargo run\`
 
