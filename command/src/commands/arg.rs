@@ -1,4 +1,3 @@
-use crate::cache::{Cache, CacheMap, Cache_get};
 use crate::commands::command::stdout_file;
 use crate::get::get_hty::get_similar;
 use crate::root::{decryption, SessionContext};
@@ -63,20 +62,20 @@ impl Commands {
 }
 
 
-pub async fn handle_command(cache: CacheMap, args: Vec<String>, session_context: &mut SessionContext) {
+pub async fn handle_command(args: Vec<String>, session_context: &mut SessionContext) {
     let commands = Commands::new(args.clone());
     let command = commands.command.clone();
 
     if session_context.user_state.root{
         // Execute root commands
         // Handle commands differently when user is in root mode
-        if let Ok(res) = command_match(commands.clone(), cache.clone(),session_context).await{
+        if let Ok(res) = command_match(commands.clone(),session_context){
             println!("{}",res)
         }
     } else if !session_context.user_state.root && !session_context.root.allowed_commands.contains(&command) {
         // Execute normal commands
         // Handle commands normally when user is not in root mode
-        if let Ok(res) = command_match(commands.clone(), cache.clone(),session_context).await{
+        if let Ok(res) = command_match(commands.clone(),session_context){
             println!("{}",res)
         }
     }else{
@@ -91,20 +90,20 @@ pub fn split(commands: Commands) -> (String,String,Vec<String>){
     (command,option,arg)
 }
 
-pub async fn command_match(commands: Commands,cache: CacheMap,session_context: &mut SessionContext) -> Result<String,std::io::Error>{
+pub fn command_match(commands: Commands,session_context: &mut SessionContext) -> Result<String,std::io::Error>{
     let (command,option,arg) = split(commands.clone());
     match command.is_empty() && option.is_empty(){
-        true=>pipe(arg, cache).await,
+        true=>pipe(arg),
         false=>match option.as_str() {
-            ">" => stdout_file(commands,cache.clone(), session_context).await,
-            _ => execute_command(&command, &option, &arg, session_context, cache).await,
+            ">" => stdout_file(commands, session_context),
+            _ => execute_command(&command, &option, &arg, session_context),
         }
     }
  
 }
 
 #[allow(unused_assignments)]
-pub async fn execute_command(command: &str, option: &str, arg: &Vec<String>, session_context: &mut SessionContext, cache: CacheMap) -> Result<String, std::io::Error> {
+pub fn execute_command(command: &str, option: &str, arg: &Vec<String>, session_context: &mut SessionContext) -> Result<String, std::io::Error> {
     match command {
         "root" => {
             let output = sudo(session_context);
@@ -113,7 +112,6 @@ pub async fn execute_command(command: &str, option: &str, arg: &Vec<String>, ses
         "exit" => {
             match option{
                 "-all" => {
-                    cache.clear();
                     std::process::exit(0);
                 },
                 _=>{
@@ -121,7 +119,6 @@ pub async fn execute_command(command: &str, option: &str, arg: &Vec<String>, ses
                         session_context.user_state.exit_root();
                         println!("Switched to root mode: {}", session_context.user_state.root);
                     } else {
-                        cache.clear();
                         std::process::exit(0);
                     }
                 }
@@ -156,12 +153,12 @@ pub async fn execute_command(command: &str, option: &str, arg: &Vec<String>, ses
             let va = ll(&session_context).unwrap();
             Ok(va)
         },
-        _ => execute_other_command(command, option, arg, cache).await,
+        _ => execute_other_command(command, option, arg),
     }
 }
 
 // match has arg's function
-pub async fn execute_other_command(command: &str, option: &str, arg: &[String], cache: CacheMap) -> Result<String, std::io::Error> {
+pub fn execute_other_command(command: &str, option: &str, arg: &[String]) -> Result<String, std::io::Error> {
     match command {
         "time" => get_time(),
         "history" => history(),
@@ -172,7 +169,7 @@ pub async fn execute_other_command(command: &str, option: &str, arg: &[String], 
         }
         "cd" | "rm" | "mkdir" | "touch" | "python" | "html" | "web" | "cat" => match arg.is_empty(){
             true=>Ok("Error: Missing parameters".to_string()),
-            false=>turn_file_or_dir(command, &arg[0]).await
+            false=>turn_file_or_dir(command, &arg[0])
         }
         "tar" => match option {
             "-zxvf" => match arg.is_empty(){
@@ -193,11 +190,19 @@ pub async fn execute_other_command(command: &str, option: &str, arg: &[String], 
             true=>Ok("Error: Missing parameters".to_string()),
             false=>cp(&arg[0], &arg[1]),
         }
-        _ => match_cache_or_error(cache.clone(), command.to_string()).await,
+        _ =>{
+            let similar = get_similar(&command).join("    ");
+            let output = format!("
+Error: Can't found this \x1B[31m{}\x1B[0m
+    Did you mean?
+{}", command,similar
+            );
+            Ok(output)
+        }
     }
 }
 
-async fn turn_file_or_dir(command: &str, arg: &str) -> Result<String, std::io::Error> {
+fn turn_file_or_dir(command: &str, arg: &str) -> Result<String, std::io::Error> {
     if let Ok(res) = turn_file(command.to_string(), arg.to_string()) {
         Ok(res)
     } else if let Ok(res) = turn_dir(command.to_string(), arg.to_string()) {
@@ -209,21 +214,6 @@ async fn turn_file_or_dir(command: &str, arg: &str) -> Result<String, std::io::E
             std::io::ErrorKind::Other,
             format!("Error: Can't found this: \x1B[33m{}\x1B[0m", command),
         ))
-    }
-}
-
-async fn match_cache_or_error(cache: CacheMap, command: String) -> Result<String, std::io::Error> {
-    match <Cache as Cache_get>::cache_get(cache.clone(), command.to_string()).await {
-        Some(s) => Ok(s.to_string()),
-        None => {
-            let similar = get_similar(&command).join("    ");
-            let output = format!("
-Error: Can't found this \x1B[31m{}\x1B[0m
-    Did you mean?
-{}", command,similar
-            );
-            Ok(output)
-        }
     }
 }
 

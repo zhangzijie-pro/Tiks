@@ -218,7 +218,7 @@ pub fn turn_file(command: String,file: String) -> Result<String, Error> {
         },
         "cat" => {
             cat(&file_lock)
-        }
+        },
         "rm" => {
             rm(&file_lock)
         }
@@ -300,7 +300,6 @@ pub fn cat(file: &str) -> Result<String,Error>{
 }
 
 
-use crate::cache::CacheMap;
 use crate::commands::download::{download_package, find_package};
 use crate::get::get_hty::file_create_time;
 use super::download::update;
@@ -387,10 +386,10 @@ pub fn xvf(to: &str) -> Result<String,std::io::Error>{
 
 
 // 重定向输出   > 
-pub async fn stdout_file(commands: Commands,cache: CacheMap,session_context: &mut SessionContext) -> Result<String, std::io::Error>{
+pub fn stdout_file(commands: Commands,session_context: &mut SessionContext) -> Result<String, std::io::Error>{
     let command = commands.command.clone();
     let arg = commands.arg.clone();
-    let result = execute_command(&command, "", &arg, session_context,cache.clone()).await?;
+    let result = execute_command(&command, "", &arg, session_context)?;
     let mut file = File::create(arg[arg.len()-1].clone())?;
     file.write_all(result.as_bytes())?;
     Ok("write over!".to_string())
@@ -492,7 +491,7 @@ pub fn grep(pattern:&str,arg: &str) -> io::Result<String>{
 
 // | pipe
 #[allow(unused_assignments)]
-pub async fn pipe(command:Vec<String>,cache: CacheMap) -> io::Result<String>{
+pub fn pipe(command:Vec<String>) -> io::Result<String>{
     let mut spilt_vec = command.split(|pipe| pipe.as_str()=="|");
     let mut output = String::new();
 
@@ -509,12 +508,12 @@ pub async fn pipe(command:Vec<String>,cache: CacheMap) -> io::Result<String>{
     let (command1,option1,arg1) = split(l.clone());
     let (command2,option2,arg2) = split(n.clone());
     
-    let result1 = execute_other_command(&command1, &option1, &arg1, cache.clone()).await?;
+    let result1 = execute_other_command(&command1, &option1, &arg1)?;
     if command2=="grep"{
         let result = grep(&arg2[0], &result1)?;
         output = format!("{}",result)
     }else{
-        let result2 = execute_other_command(&command2, &option2, &arg2, cache.clone()).await?;
+        let result2 = execute_other_command(&command2, &option2, &arg2)?;
         output = format!("
         {}
         {}
@@ -524,6 +523,63 @@ pub async fn pipe(command:Vec<String>,cache: CacheMap) -> io::Result<String>{
     Ok(output)
 }
 
+
+pub fn nano(filename: &str){
+    let path = Path::new(filename);
+    let file = if path.exists(){
+        fs::File::open(&path).unwrap()
+    }else{
+        fs::File::create_new(path).unwrap()
+    };
+
+    let reader = io::BufReader::new(&file);
+    let mut lines = Vec::new();
+    for line in reader.lines() {
+        if let Ok(line) = line {
+            lines.push(line);
+        }
+    }
+
+    loop {
+        for (i, line) in lines.iter().enumerate() {
+            println!("{: <4}{}", i + 1, line);
+        }
+
+        print!("> ");
+        io::stdout().flush().unwrap();
+
+        let mut input = String::new();
+        io::stdin().read_line(&mut input).expect("Failed to read line");
+
+        let input = input.trim();
+
+        match input {
+            "q" => {
+                println!("Exiting Nano...");
+                return;
+            }
+            "w" => {
+                if let Err(err) = save_changes(filename, &lines) {
+                    println!("Error saving file: {}", err);
+                } else {
+                    println!("File saved successfully.");
+                }
+            }
+            _ => {
+                println!("Unknown command: {}", input);
+                continue;
+            }
+        }
+    }
+}
+
+fn save_changes(filename: &str, lines: &Vec<String>) -> io::Result<()> {
+    let mut file = fs::File::create(filename)?;
+    for line in lines {
+        writeln!(file, "{}", line)?;
+    }
+    Ok(())
+}
 
 // turn vec<_> to Commands
 fn  turn_command(v: Vec<String>) -> Commands{

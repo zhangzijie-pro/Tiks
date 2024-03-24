@@ -6,7 +6,6 @@
 // There is some error or other suggestions contact me : zzj01262022@163.com
 // Cargo run
 
-use command::cache::initialize_command_cache;
 use command::get::get_hty::get_last;
 use command::root::SessionContext;
 use command::commands::arg::handle_command;
@@ -18,7 +17,6 @@ use std::io::{self, Write};
 #[tokio::main]
 async fn main() {
         start_logo::start_logo();
-        let cache = initialize_command_cache().await;
         let mut session_context = SessionContext::new();
         loop {
             let mut args: Vec<String> = Vec::new();
@@ -40,7 +38,7 @@ async fn main() {
                 match res{
                     Some(command) => {
                         args.extend(command.split_whitespace().map(|s| s.to_string()));
-                        handle_command(cache.clone(),args.clone(),&mut session_context).await;
+                        handle_command(args.clone(),&mut session_context).await;
                     },
                     None =>{
                         continue;
@@ -49,7 +47,7 @@ async fn main() {
 
             }else{
                 args.extend(command.split_whitespace().map(|s| s.to_string()));
-                handle_command(cache.clone(),args.clone(),&mut session_context).await;
+                handle_command(args.clone(),&mut session_context).await;
             }
         }
 }
