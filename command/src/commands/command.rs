@@ -10,13 +10,13 @@ use lazy_static::lazy_static;
 
 
 // whoami
-pub fn whoami(session_context: &mut SessionContext) -> String{
+pub fn whoami(session_context: &mut SessionContext) -> io::Result<(usize,String)>{
     let mut res = session_context.get_username();
     if session_context.user_state.root{
         res = "root".to_string()
     }
 
-    res
+    Ok((STATUE_CODE,res))
 }
 
 
@@ -41,14 +41,14 @@ pub fn help() -> String{
 
 
 // pwd
-pub fn pwd() -> String{
+pub fn pwd() -> io::Result<(usize,String)>{
     let path = env::current_dir().unwrap().as_path().display().to_string();
-    path
+    Ok((STATUE_CODE,path))
 }
 
 
 // ls
-pub fn ls() -> io::Result<String> { 
+pub fn ls() -> io::Result<(usize,String)> { 
     let dir_path = Path::new("./");
     let mut result = String::new();
 
@@ -61,7 +61,7 @@ pub fn ls() -> io::Result<String> {
                 result.push_str(&format!("\x1B[32m{}    \x1B[0m", entry.path().display()));
             }
         }
-        Ok(result)
+        Ok((STATUE_CODE,result))
     } else {
         Err(Error::new(ErrorKind::NotFound, "Path is not a directory"))
     }
@@ -69,7 +69,7 @@ pub fn ls() -> io::Result<String> {
 
 
 // ll
-pub fn ll(context: &SessionContext) -> io::Result<String>{
+pub fn ll(context: &SessionContext) -> io::Result<(usize,String)>{
     let dir_path = Path::new("./");
     let mut result = String::new();
     let dirs = fs::read_dir(dir_path)?;
@@ -135,7 +135,7 @@ pub fn ll(context: &SessionContext) -> io::Result<String>{
             file_name
         ));
     }
-    Ok(result)
+    Ok((STATUE_CODE,result))
 }
 
 
@@ -151,24 +151,24 @@ pub fn history_push(command: String){
 }
 
 
-pub fn history() -> Result<String,Error>{
+pub fn history() -> Result<(usize,String),Error>{
     let s = HISTROY.lock().unwrap();
     for (i,c) in s.iter().enumerate(){
         println!("{}: {}",i,c);
     }
 
     let res = String::new().trim().to_owned();
-    Ok(res)
+    Ok((STATUE_CODE,res))
 }
 
 
 // cd
-pub fn cd(path: &str) -> Result<String,Error>{
+pub fn cd(path: &str) -> Result<(usize,String),Error>{
     let new_path = Path::new(path);
     env::set_current_dir(new_path)?;
 
     let res = format!("Successfully changed directory to {}.",path);
-    Ok(res)
+    Ok((STATUE_CODE,res))
 }
 
 
@@ -178,7 +178,7 @@ lazy_static!{
 }
 
 
-pub fn turn_dir(command: String, dir: String) -> Result<String,Error>{
+pub fn turn_dir(command: String, dir: String) -> Result<(usize,String),Error>{
     let mut dir_lock = DIR.write().unwrap();
     *dir_lock = Box::leak(dir.into_boxed_str());
 
@@ -208,7 +208,7 @@ lazy_static! {
 }
 
 
-pub fn turn_file(command: String,file: String) -> Result<String, Error> {
+pub fn turn_file(command: String,file: String) -> Result<(usize,String), Error> {
     let mut file_lock = FILE.write().unwrap();
     *file_lock = Box::leak(file.into_boxed_str());
 
@@ -233,34 +233,34 @@ pub fn turn_file(command: String,file: String) -> Result<String, Error> {
 
 
 //touch
-pub fn touch(file: &str) -> Result<String,std::io::Error>{
+pub fn touch(file: &str) -> Result<(usize,String),std::io::Error>{
     if file.is_empty(){
-        return Ok("there is None".to_string());
+        return Ok(empty_file());
     }
     let _ = fs::File::create_new(Path::new(file))?;
 
     let res = format!("Successfully created {}",file);
-    Ok(res)
+    Ok((STATUE_CODE,res))
 }
 
 
 // mkdir
-pub fn mkdir(dir: &str) -> Result<String,std::io::Error>{
+pub fn mkdir(dir: &str) -> Result<(usize,String),std::io::Error>{
     if dir.is_empty(){
-        return Ok("there is None".to_string());
+        return Ok(empty_dir());
     }
     let mut builder = fs::DirBuilder::new();
     let _ = builder.recursive(true).create(Path::new(dir));
 
     let res = format!("Successfully created {}",dir);
-    Ok(res)
+    Ok((STATUE_CODE,res))
 }
 
 
 // rm
-pub fn rm(file: &str) -> Result<String,std::io::Error>{
+pub fn rm(file: &str) -> Result<(usize,String),std::io::Error>{
     if file.is_empty(){
-        return Ok("there is None".to_string());
+        return Ok(empty_file());
     }
     let filepath = Path::new(file);
     match filepath.is_dir() {
@@ -273,43 +273,44 @@ pub fn rm(file: &str) -> Result<String,std::io::Error>{
     }
 
     let res = String::new().trim().to_owned();
-    Ok(res)
+    Ok((STATUE_CODE,res))
 }
 
 
 // rn mv
-pub fn rename(source:&str,now:&str) -> std::io::Result<String> {
+pub fn rename(source:&str,now:&str) -> std::io::Result<(usize,String)> {
     if source.is_empty(){
-        return Ok("there is None".to_string());
+        return Ok(empty_file());
     }
     let _ = fs::rename(source, now);
     let res = String::new().trim().to_owned();
-    Ok(res)
+    Ok((STATUE_CODE,res))
 }
 
 
 // cat
-pub fn cat(file: &str) -> Result<String,Error>{
+pub fn cat(file: &str) -> Result<(usize,String),Error>{
     if file.is_empty(){
-        return Ok("there is None".to_string());
+        return Ok(empty_file());
     }
     let f = fs::File::open(Path::new(file));
     let mut buffer = String::new();
     let _ = f.unwrap().read_to_string(&mut buffer);
-    Ok(buffer)
+    Ok((STATUE_CODE,buffer))
 }
 
 
 use crate::commands::download::{download_package, find_package};
 use crate::get::get_hty::file_create_time;
+use crate::state_code::{empty_dir, empty_file, missing_pattern, pipe_err, STATUE_CODE};
 use super::download::update;
 use crate::root::SessionContext;
 
 
 // apt -install  xxx
-pub fn apt(name: &str) -> io::Result<String>{
+pub fn apt(name: &str) -> io::Result<(usize,String)>{
     if name.is_empty(){
-        return Ok("Error: Missing parameters".to_string());
+        return Ok(missing_pattern());
     }
     match find_package(name) {
         Some(package) => {
@@ -323,14 +324,14 @@ pub fn apt(name: &str) -> io::Result<String>{
     }
 
     let res = format!("Successfully download Package {}",name);
-    Ok(res)
+    Ok((STATUE_CODE,res))
 }
 
 
 // apt -update xxx
-pub fn update_new(version: &str) -> io::Result<String>{
+pub fn update_new(version: &str) -> io::Result<(usize,String)>{
     if version.is_empty(){
-        return Ok("Error: Missing parameters".to_string());
+        return Ok(missing_pattern());
     }
     match update(&version) {
         Ok(_) => {
@@ -343,11 +344,11 @@ pub fn update_new(version: &str) -> io::Result<String>{
                 let _ = std::fs::remove_file(script_path);
             }
             let res = format!("Successfully Update version {}",version);
-            Ok(res)
+            Ok((STATUE_CODE,res))
         }
         Err(_) => {
             let err = format!("The current version is the latest one");
-            return Ok(err);
+            return Ok((STATUE_CODE,err));
         },
     }
 
@@ -361,46 +362,46 @@ use flate2::write::GzEncoder;
 use super::arg::{execute_command, execute_other_command, split, Commands};
 
 
-pub fn zxvf(file: &str, to: &str) -> Result<String,std::io::Error>{
+pub fn zxvf(file: &str, to: &str) -> Result<(usize,String),std::io::Error>{
     if file.is_empty() || to.is_empty(){
-        return Ok("Error: Missing parameters".to_string());
+        return Ok(missing_pattern());
     }
     let tar_gz = File::create(to)?;
     let enc = GzEncoder::new(tar_gz, Compression::default());
     let mut tar = tar::Builder::new(enc);
     tar.append_file(file, &mut File::open(file)?)?;
-    Ok("Successfully Compression".to_string())
+    Ok((STATUE_CODE,"Successfully Compression".to_string()))
 }
 
 
-pub fn xvf(to: &str) -> Result<String,std::io::Error>{
+pub fn xvf(to: &str) -> Result<(usize,String),std::io::Error>{
     if to.is_empty(){
-        return Ok("Error: Missing parameters".to_string());
+        return Ok(missing_pattern());
     }
     let tar_gz = File::open(to)?;
     let tar = GzDecoder::new(tar_gz);
     let mut archive = Archive::new(tar);
     archive.unpack(".")?;
-    Ok("Successfully Decompression".to_string())
+    Ok((STATUE_CODE,"Successfully Decompression".to_string()))
 }
 
 
 // 重定向输出   > 
-pub fn stdout_file(commands: Commands,session_context: &mut SessionContext) -> Result<String, std::io::Error>{
+pub fn stdout_file(commands: Commands,session_context: &mut SessionContext) -> Result<(usize,String), std::io::Error>{
     let command = commands.command.clone();
     let arg = commands.arg.clone();
-    let result = execute_command(&command, "", &arg, session_context)?;
+    let result = execute_command(&command, "", &arg, session_context)?.1;
     let mut file = File::create(arg[arg.len()-1].clone())?;
     file.write_all(result.as_bytes())?;
-    Ok("write over!".to_string())
+    Ok((STATUE_CODE,"write over!".to_string()))
 }
 
 
 // cp
 #[allow(unused_assignments)]
-pub fn cp(source:&str, to: &str) -> io::Result<String>{
+pub fn cp(source:&str, to: &str) -> io::Result<(usize,String)>{
     if source.is_empty() || to.is_empty(){
-        return Ok("Error: Missing parameters".to_string());
+        return Ok(missing_pattern());
     }
 
     let file = fs::read(source)?;
@@ -416,13 +417,13 @@ pub fn cp(source:&str, to: &str) -> io::Result<String>{
         }
     }
 
-    Ok(output)
+    Ok((STATUE_CODE,output))
 }
 
 
 // sudo
 #[allow(unused_assignments)]
-pub fn sudo(session_context: &mut SessionContext)->io::Result<String>{
+pub fn sudo(session_context: &mut SessionContext)->io::Result<(usize,String)>{
     loop{
         let mut output = String::new();
         let user = session_context.get_username();
@@ -431,7 +432,7 @@ pub fn sudo(session_context: &mut SessionContext)->io::Result<String>{
         let res = session_context.toggle_root(pd);
         if res.is_ok() {
             output = format!("Sucessfully to change root");
-            return Ok(output);
+            return Ok((STATUE_CODE,output));
         } else {
             println!("Sorry, try again");
             continue;
@@ -442,17 +443,17 @@ pub fn sudo(session_context: &mut SessionContext)->io::Result<String>{
 
 // get time
 use chrono;
-pub fn get_time() -> io::Result<String>{
+pub fn get_time() -> io::Result<(usize,String)>{
     let now = chrono::Local::now();
     let time = now.format("%Y-%m-%d %H:%M:%S").to_string();
 
-    Ok(time)
+    Ok((STATUE_CODE,time))
 }
 
 // grep
-pub fn grep(pattern:&str,arg: &str) -> io::Result<String>{
+pub fn grep(pattern:&str,arg: &str) -> io::Result<(usize,String)>{
     if arg.is_empty(){
-        return Ok("Error: Missing parameters".to_string());
+        return Ok(missing_pattern());
     }
 
     let mut output = String::new();
@@ -484,45 +485,52 @@ pub fn grep(pattern:&str,arg: &str) -> io::Result<String>{
         let _ = output.trim();
     }
 
-    Ok(output)
+    Ok((STATUE_CODE,output))
 }
 
 
 
 // | pipe
 #[allow(unused_assignments)]
-pub fn pipe(command:Vec<String>) -> io::Result<String>{
+pub fn pipe(command:Vec<String>) -> io::Result<(usize,String)>{
     let mut spilt_vec = command.split(|pipe| pipe.as_str()=="|");
     let mut output = String::new();
 
     let last_command = spilt_vec.next().map(|s| s.to_vec());
     let next_command = spilt_vec.next().map(|s| s.to_vec());
     if last_command.is_none() || next_command.is_none(){
-        output = format!("| ?");
-        return Ok(output)
+        return Ok(pipe_err())
     }
 
     let l = turn_command(last_command.unwrap());
     let n = turn_command(next_command.unwrap());
 
     let (command1,option1,arg1) = split(l.clone());
-    let (command2,option2,arg2) = split(n.clone());
+    let (command2,option2,_arg2) = split(n.clone());
     
     let result1 = execute_other_command(&command1, &option1, &arg1)?;
-    if command2=="grep"{
-        let result = grep(&arg2[0], &result1)?;
-        output = format!("{}",result)
-    }else{
-        let result2 = execute_other_command(&command2, &option2, &arg2)?;
-        output = format!("
-        {}
-        {}
-        ",result1,result2);
+    match result1.0{
+        0=>{
+            let arg = result1.1.clone();
+            let result2 = execute_other_command(&command2, &option2, &[arg])?;
+            match result2.0 {
+                0=>{
+                    output=format!("{}",result2.1);
+                },
+                _ =>return Ok(pipe_err())
+            }
+        },
+        _=>return Ok(pipe_err())
     }
 
-    Ok(output)
+
+    Ok((STATUE_CODE,output))
 }
 
+// &
+pub fn and(_command:Vec<String>) -> io::Result<(usize,String)>{
+    Ok(pipe_err())
+}
 
 pub fn nano(filename: &str){
     let path = Path::new(filename);

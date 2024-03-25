@@ -8,8 +8,8 @@
 
 use command::get::get_hty::get_last;
 use command::root::SessionContext;
-use command::commands::arg::handle_command;
 use command::commands::command::{history_push,pwd};
+use command::run::run;
 use command::start_logo;
 use std::io::{self, Write};
 
@@ -38,7 +38,7 @@ async fn main() {
                 match res{
                     Some(command) => {
                         args.extend(command.split_whitespace().map(|s| s.to_string()));
-                        handle_command(args.clone(),&mut session_context).await;
+                        run(args.clone(),&mut session_context);
                     },
                     None =>{
                         continue;
@@ -47,7 +47,7 @@ async fn main() {
 
             }else{
                 args.extend(command.split_whitespace().map(|s| s.to_string()));
-                handle_command(args.clone(),&mut session_context).await;
+                run(args.clone(),&mut session_context);
             }
         }
 }
@@ -58,7 +58,8 @@ fn print_prompt(session_context: &mut SessionContext) {
     if session_context.user_state.root{
         whoami="root".to_string()
     }
-    let input = format!("\x1B[32;1m{}\x1B[0m:\x1B[34m{}>>\x1B[0m ",whoami,pwd()); // Assuming whoami() returns the current user
+    let pwd = pwd().unwrap().1;
+    let input = format!("\x1B[32;1m{}\x1B[0m:\x1B[34m{}>>\x1B[0m ",whoami,pwd); // Assuming whoami() returns the current user
     print!("{}",input);
     io::stdout().flush().unwrap();
 }

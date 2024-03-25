@@ -1,7 +1,9 @@
 use std::process::Command;
 
+use crate::state_code::{run_code, run_code_er};
+
 // run code use python ...
-pub fn python(file: Option<&str>) -> Result<String, std::io::Error> {
+pub fn python(file: Option<&str>) -> Result<(usize,String), std::io::Error> {
     if file.is_none(){
         eprintln!("Error: please provide a valid file")
     }
@@ -10,31 +12,29 @@ pub fn python(file: Option<&str>) -> Result<String, std::io::Error> {
     .arg(file.unwrap());
 
     let s = cmd.spawn()?.wait();
+
     if s.is_err(){
-        let help = format!("      
-Command 'python' not found, did you mean:
-    apt install python
-        ");
-        return Ok(help);
+        return Ok(run_code_er());
     }
-    Ok("\ncode run over!".to_string())
+
+    Ok(run_code())
 }
 
 
 // open web in html
-pub fn html(file: Option<&str>) -> Result<String,std::io::Error>{
+pub fn html(file: Option<&str>) -> Result<(usize,String),std::io::Error>{
     match file {
         Some(html) => {
             let s = webbrowser::open(html);
             if s.is_err(){
-                return Ok("Error: Can't open".to_string());
+                return Ok(run_code_er());
             }
         },
         None => {
             eprintln!("Error: Path is None. Please provide a valid file path or web.");
         }
     }
-    Ok("open over!".to_string())
+    Ok(run_code())
 }
 
 // others

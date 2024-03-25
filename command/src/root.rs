@@ -54,12 +54,12 @@ impl User{
         self.has_set_password = true;
     }
 
-    pub fn revise_password(&self, password: &str) -> Result<String, std::io::Error> {
+    pub fn revise_password(&self, password: &str) -> Result<(usize,String), std::io::Error> {
         let new_pd = encryption(password.to_string());
         let _ = self.password == new_pd;
 
         let output = format!("Successfully revises the password");
-        Ok(output)
+        Ok((STATUE_CODE,output))
     }
 
     pub fn has_set_password(&self) -> bool {
@@ -188,6 +188,8 @@ fn get_password() -> String{
 use std::str;
 #[allow(deprecated)]
 use base64::{encode, decode};
+
+use crate::state_code::STATUE_CODE;
 // base64
 // 加密
 #[allow(deprecated)]
