@@ -45,6 +45,7 @@ impl Thread{
 }
 
 
+
 // TCB
 #[derive(Clone,Debug)]
 pub struct ThreadControlBlock{
@@ -59,9 +60,7 @@ impl ThreadControlBlock{
     }
 
     pub fn add_thread(&mut self, thread: Thread){
-        if self.threads.len()<3{
-            self.threads.push(thread)
-        }
+        self.threads.push(thread)
     }
 
     pub fn stop_thread(&mut self, tid: usize) {
@@ -80,9 +79,11 @@ impl ThreadControlBlock{
         }
     }
 
-    pub fn list_threads(&self) {
+    pub fn list_running_threads(&self) {
         for thread in &self.threads {
-            println!("TID: {}, Name: {}, State: {:?}", thread.tid, thread.name, thread.status());
+            if let ThreadStatus::Running = thread.state {
+                println!("TID: {}, Name: {}, State: Running", thread.tid, thread.name);
+            }
         }
     }
 

@@ -3,7 +3,7 @@ use crate::get::get_hty::get_similar;
 use crate::root::{decryption, SessionContext};
 
 use super::code::{html, python};
-use super::command::{apt, cp, get_time, grep, history, ll, ls, rename, sudo, turn_dir, turn_file, update_new, whoami, xvf, zxvf};
+use super::command::{apt, cp, echo_print, get_time, grep, history, ll, ls, pwd, rename, sudo, turn_dir, turn_file, update_new, whoami, xvf, zxvf};
 
 #[allow(dead_code)]
 #[derive(Clone)]
@@ -36,7 +36,7 @@ impl Commands {
                 }
             },
             _ =>{
-                if commands.contains(&"|".to_string()){
+                if commands.contains(&"|".to_string())||commands.contains(&"&".to_string()){
                     arg=commands;
                 }else{
                     command = commands[0].clone();
@@ -68,13 +68,12 @@ pub fn command_match(commands: Commands,session_context: &mut SessionContext) ->
             ">" => stdout_file(commands, session_context),
             _ => execute_command(&command, &option, &arg, session_context),
     }
- 
 }
 
 #[allow(unused_assignments)]
 pub fn execute_command(command: &str, option: &str, arg: &Vec<String>, session_context: &mut SessionContext) -> Result<(usize,String), std::io::Error> {
     match command {
-        "root" => {
+        "sudo" => {
             let output = sudo(session_context);
             output
         },
@@ -129,13 +128,15 @@ pub fn execute_command(command: &str, option: &str, arg: &Vec<String>, session_c
 // match has arg's function
 pub fn execute_other_command(command: &str, option: &str, arg: &[String]) -> Result<(usize,String), std::io::Error> {
     match command {
+        "pwd" => pwd(),
         "time" => get_time(),
         "history" => history(),
         "ls" | "l" => ls(),
         "grep" => match arg.is_empty(){
             true=>Ok((0,"Error: Missing parameters".to_string())),
             false=>grep(&arg[0], &arg[1])
-        }
+        },
+        "echo"|"print" => Ok(echo_print(arg[0].clone())),
         "cd" | "rm" | "mkdir" | "touch" | "python" | "html" | "web" | "cat" => match arg.is_empty(){
             true=>Ok((0,"Error: Missing parameters".to_string())),
             false=>turn_file_or_dir(command, &arg[0])
@@ -166,7 +167,7 @@ Error: Can't found this \x1B[31m{}\x1B[0m
     Did you mean?
 {}", command,similar
             );
-            Ok((1,output))
+            Ok((404,output))
         }
     }
 }

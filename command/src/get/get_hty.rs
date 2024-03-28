@@ -1,8 +1,8 @@
 
-use crate::commands::command::HISTROY;
+use crate::commands::command::{get_time, HISTROY};
 use chrono::{DateTime, Datelike, Local, Timelike};
 
-use std::time::Duration;
+use std::{fs::OpenOptions, io::Write, path::Path, time::Duration};
 
 pub fn get_last(index: usize) -> (usize,Option<String>){
     let len = HISTROY.lock().unwrap().len();
@@ -14,10 +14,8 @@ pub fn get_last(index: usize) -> (usize,Option<String>){
 }
 
 fn turn_time(du: Duration) -> String{
-    // 将时间间隔转换为 DateTime 对象
     let created: DateTime<Local> = Local::now() - du;
 
-    // 将月份转换为对应的英文缩写//Feb 08 20:23
     let month_abbrev = match created.month() {
         1 => "Jan",
         2 => "Feb",
@@ -34,7 +32,6 @@ fn turn_time(du: Duration) -> String{
         _ => "Invalid",
     };
 
-    // 获取日、小时、分钟
     let day = created.day();
     let hour = created.hour();
     let minute = created.minute();
@@ -57,7 +54,7 @@ pub fn file_create_time(path: &str) -> String{
 
 // get similar command
 pub fn get_similar(arg: &str) -> Vec<String>{
-    let commands = vec!["ls","pwd","pd","history","whoami","help","ll","cd","mv","cp","rn","tar","rm","mkdir","touch","python","html","web","cat","exit","root","apt"];
+    let commands = vec!["ls","pwd","pd","history","whoami","help","ll","cd","mv","cp","rn","tar","rm","mkdir","touch","python","html","web","cat","exit","sudo","apt","ps","sleep","kill"];
     let mut output = Vec::new();
     let threshold = 1;
     for command in commands {
@@ -97,4 +94,45 @@ fn levenshtein_distance(arg:&str,command:&str) -> usize{
     }
     dp[len1][len2]
 
+}
+
+
+// write error.log
+fn get_home_err() -> String{
+    let home_dir = dirs::home_dir().expect("Failed to get home directory");
+    let binding = home_dir.join(".Tiks").join("error.log");
+    let res = binding.as_os_str().to_str().unwrap();
+    res.to_string()
+}
+
+pub fn error_log(err: String){
+    let time = get_time().unwrap().1;
+    let home_path = get_home_err();
+    let path = Path::new(&home_path);
+
+    if let Some(parent) = path.parent() {
+        if !parent.exists() {
+            if let Err(e) = std::fs::create_dir_all(parent) {
+                eprintln!("Failed to create directory: {}", e);
+                return;
+            }
+        }
+    }
+
+    let mut file = match OpenOptions::new().append(true).create(true).open(path) {
+        Ok(file) => file,
+        Err(e) => {
+            eprintln!("Failed to open file: {}", e);
+            return;
+        }
+    };
+
+    let error = format!("[{}]: {}\n", time, err);
+    let write_err = error.as_bytes();
+
+    if let Err(e) = file.write_all(write_err) {
+        eprintln!("Failed to write to file: {}", e);
+        return;
+    }
+    // error.log -> $HOME/.Tiks/error.log -> [time]: [Error]
 }

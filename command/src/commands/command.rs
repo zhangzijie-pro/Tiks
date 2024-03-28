@@ -302,7 +302,8 @@ pub fn cat(file: &str) -> Result<(usize,String),Error>{
 
 use crate::commands::download::{download_package, find_package};
 use crate::get::get_hty::file_create_time;
-use crate::state_code::{empty_dir, empty_file, missing_pattern, pipe_err, STATUE_CODE};
+use crate::run::run;
+use crate::state_code::{empty_dir, empty_file, missing_pattern,  STATUE_CODE};
 use super::download::update;
 use crate::root::SessionContext;
 
@@ -392,7 +393,7 @@ pub fn stdout_file(commands: Commands,session_context: &mut SessionContext) -> R
     let arg = commands.arg.clone();
     let result = execute_command(&command, "", &arg, session_context)?.1;
     let mut file = File::create(arg[arg.len()-1].clone())?;
-    file.write_all(result.as_bytes())?;
+    file.write(result.as_bytes())?;
     Ok((STATUE_CODE,"write over!".to_string()))
 }
 
@@ -460,7 +461,7 @@ pub fn grep(pattern:&str,arg: &str) -> io::Result<(usize,String)>{
 
     if let Ok(file) = File::open(arg){
         let reader = io::BufReader::new(file);
-    
+
         for line in reader.lines(){
             let line = line?;
             if line.contains(pattern){
@@ -489,104 +490,43 @@ pub fn grep(pattern:&str,arg: &str) -> io::Result<(usize,String)>{
 }
 
 
-
 // | pipe
 #[allow(unused_assignments)]
 pub fn pipe(command:Vec<String>) -> io::Result<(usize,String)>{
-    let mut spilt_vec = command.split(|pipe| pipe.as_str()=="|");
+    let spilt_vec = command.split(|pipe| pipe.as_str()=="|");
+
     let mut output = String::new();
+    let mut last_result = Vec::new();
 
-    let last_command = spilt_vec.next().map(|s| s.to_vec());
-    let next_command = spilt_vec.next().map(|s| s.to_vec());
-    if last_command.is_none() || next_command.is_none(){
-        return Ok(pipe_err())
+    for i in spilt_vec{
+        let i = i.to_vec();
+        let commands = turn_command(i);
+        let (command,option,mut arg) = split(commands);
+        arg.append(&mut last_result);
+        let mut result = (0,String::new());
+        if arg.is_empty(){
+            result = execute_other_command(&command, &option, &last_result).expect("Error: ...");
+        }else{
+            result = execute_other_command(&command, &option, &arg).expect("Error: ...");
+        }
+        last_result.push(result.1.clone());
+        output = result.1;
     }
-
-    let l = turn_command(last_command.unwrap());
-    let n = turn_command(next_command.unwrap());
-
-    let (command1,option1,arg1) = split(l.clone());
-    let (command2,option2,_arg2) = split(n.clone());
-    
-    let result1 = execute_other_command(&command1, &option1, &arg1)?;
-    match result1.0{
-        0=>{
-            let arg = result1.1.clone();
-            let result2 = execute_other_command(&command2, &option2, &[arg])?;
-            match result2.0 {
-                0=>{
-                    output=format!("{}",result2.1);
-                },
-                _ =>return Ok(pipe_err())
-            }
-        },
-        _=>return Ok(pipe_err())
-    }
-
 
     Ok((STATUE_CODE,output))
 }
 
 // &
-pub fn and(_command:Vec<String>) -> io::Result<(usize,String)>{
-    Ok(pipe_err())
-}
-
-pub fn nano(filename: &str){
-    let path = Path::new(filename);
-    let file = if path.exists(){
-        fs::File::open(&path).unwrap()
-    }else{
-        fs::File::create_new(path).unwrap()
-    };
-
-    let reader = io::BufReader::new(&file);
-    let mut lines = Vec::new();
-    for line in reader.lines() {
-        if let Ok(line) = line {
-            lines.push(line);
-        }
-    }
-
-    loop {
-        for (i, line) in lines.iter().enumerate() {
-            println!("{: <4}{}", i + 1, line);
-        }
-
-        print!("> ");
-        io::stdout().flush().unwrap();
-
-        let mut input = String::new();
-        io::stdin().read_line(&mut input).expect("Failed to read line");
-
-        let input = input.trim();
-
-        match input {
-            "q" => {
-                println!("Exiting Nano...");
-                return;
-            }
-            "w" => {
-                if let Err(err) = save_changes(filename, &lines) {
-                    println!("Error saving file: {}", err);
-                } else {
-                    println!("File saved successfully.");
-                }
-            }
-            _ => {
-                println!("Unknown command: {}", input);
-                continue;
-            }
-        }
+pub fn and(command:Vec<String>,session_context: &mut SessionContext){
+    let commands = command.split(|x| x=="&");
+    for c in commands{
+        let v = c.to_vec();
+        run(v, session_context)
     }
 }
 
-fn save_changes(filename: &str, lines: &Vec<String>) -> io::Result<()> {
-    let mut file = fs::File::create(filename)?;
-    for line in lines {
-        writeln!(file, "{}", line)?;
-    }
-    Ok(())
+pub fn echo_print<T: std::fmt::Debug>(output: T) -> (usize,T){
+    (STATUE_CODE,output)
 }
 
 // turn vec<_> to Commands

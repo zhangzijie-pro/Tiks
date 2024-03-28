@@ -8,7 +8,7 @@
 
 use command::get::get_hty::get_last;
 use command::root::SessionContext;
-use command::commands::command::{history_push,pwd};
+use command::commands::command::{and, history_push, pipe, pwd};
 use command::run::run;
 use command::start_logo;
 use std::io::{self, Write};
@@ -44,10 +44,16 @@ async fn main() {
                         continue;
                     }
                 }
-
             }else{
                 args.extend(command.split_whitespace().map(|s| s.to_string()));
-                run(args.clone(),&mut session_context);
+                if args.contains(&"&".to_string()){
+                    and(args.clone(), &mut session_context)
+                }else if args.contains(&"|".to_string()){
+                    let s = pipe(args).unwrap();
+                    println!("{}",s.1)
+                }else{
+                    run(args.clone(),&mut session_context);
+                }
             }
         }
 }

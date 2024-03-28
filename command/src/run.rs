@@ -1,16 +1,19 @@
+use crate::get::get_hty::error_log;
 use crate::process::process::ProcessManager;
-use crate::process::task_command::{kill, ps, sleep};
+use crate::process::task_command::{kill_p, kill_t, ps, ps_p, ps_t, sleep};
 use crate::process::thread::ThreadControlBlock;
 use crate::get::priority::get_priority;
 use crate::process::add_task::{add_command_to_thread,add_thread_to_process};
 use crate::root::SessionContext;
 
+use std::process::exit;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::commands::arg::{command_match, Commands};
 
 static NEXT_TID: AtomicUsize = AtomicUsize::new(1);
 static NEXT_PID: AtomicUsize = AtomicUsize::new(1);
+
 
 pub fn handle_command(args: Vec<String>) -> (Commands,ThreadControlBlock,ProcessManager,usize) {
     let commands = Commands::new(args.clone());
@@ -31,12 +34,19 @@ pub fn run(args: Vec<String>,session_context: &mut SessionContext){
     let tid = tcb.get_highest_priority_thread().unwrap();
 
     match commands.command.as_str(){
-        "ps" =>  {ps(tcb.clone());println!("\nTCB:\n{:?}\n\n",tcb);println!("PCB:\n{:?}\n\n",pcb)},
-        "kill" => kill(tid, &mut tcb),
+        "ps" => match commands.option.as_str() {
+            "-t" => ps_t(tcb),
+            "-p" => ps_p(pcb),
+            _ =>ps(tcb.clone(),pcb),
+        }
+        "kill" => match commands.option.as_str() {
+            "-t" => kill_t(tid, &mut tcb),
+            "-p" => kill_p(pid, &mut pcb),
+            _ => exit(0),
+        }
         "sleep" => sleep(&mut tcb, commands.arg[0].parse::<usize>().unwrap()),
         _ =>{
             // start process and thread
-            tcb.start_thread(tid); pcb.start_process(pid);
             if session_context.user_state.root{
                 // Execute root commands
                 // Handle commands differently when user is in root mode
@@ -48,7 +58,8 @@ pub fn run(args: Vec<String>,session_context: &mut SessionContext){
                         tcb.stop_thread(tid);
                         pcb.stop_process(pid);
                     }else{
-                        println!("{:?}",res)
+                        error_log(res.1.clone());
+                        println!("{}",res.1);
                     }
                 }
             } else if !session_context.user_state.root && !session_context.root.allowed_commands.contains(&commands.command) {
@@ -62,13 +73,13 @@ pub fn run(args: Vec<String>,session_context: &mut SessionContext){
                         tcb.stop_thread(tid);
                         pcb.stop_process(pid);
                     }else{
-                        println!("{:?}",res)
+                        error_log(res.1.clone());
+                        println!("{}",res.1);
                     }
                 }
-
-    }else{
-        eprintln!("Permission not support")
-    }
+            }else{
+                eprintln!("Permission not support")
+            }
         }
     }
     

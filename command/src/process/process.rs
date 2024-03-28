@@ -75,9 +75,11 @@ impl ProcessManager {
         }
     }
 
-    pub fn list_processes(&self) {
+    pub fn list_running_processes(&self) {
         for process in &self.processes {
-            println!("PID: {}, Name: {}, State: {:?}", process.pid, process.name, process.status());
+            if let ProcessState::Running = process.state {
+                println!("PID: {}, Name: {}, State: Running", process.pid, process.name);
+            }
         }
     }
 }
