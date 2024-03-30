@@ -1,26 +1,29 @@
 use crate::process::thread::ThreadControlBlock;
+use crate::signal::Semaphore;
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct Process {
-    pid: usize,
-    name: String,
-    state: ProcessState,
-    pub thread: ThreadControlBlock
+    pub pid: usize,
+    pub name: String,
+    pub state: ProcessState,
+    pub thread: ThreadControlBlock,
+    pub semaphore: Semaphore,
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub enum ProcessState {
     Running,
     Stopped,
 }
 
 impl Process {
-    pub fn new(pid: usize, name: &str, tcb: ThreadControlBlock) -> Self {
+    pub fn new(pid: usize, name: &str, tcb: ThreadControlBlock,semaphore: Semaphore) -> Self {
         Process {
             pid,
             name: name.to_string(),
             state: ProcessState::Running,
-            thread:tcb
+            thread:tcb,
+            semaphore
         }
     }
 
@@ -30,9 +33,11 @@ impl Process {
 
     pub fn stop(&mut self) {
         self.state = ProcessState::Stopped;
+        self.semaphore.release()
     }
 
     pub fn start(&mut self) {
+        self.semaphore.acquire();
         self.state = ProcessState::Running;
     }
 
@@ -43,7 +48,7 @@ impl Process {
 
 
 // PCB -> Process -> TCB
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct ProcessManager {
     pub processes: Vec<Process>,
 }
@@ -55,11 +60,13 @@ impl ProcessManager {
         }
     }
 
-    pub fn add_process(&mut self, process: Process) {
-        self.processes.push(process);
+    pub fn ps(&self) {
+        for process in &self.processes {
+            println!("PID: {}, Name: {}, State: {:?}", process.pid, process.name, process.status());
+        }
     }
 
-    pub fn stop_process(&mut self, pid: usize) {
+    pub fn kill(&mut self, pid: usize) {
         if let Some(process) = self.processes.iter_mut().find(|p| p.pid == pid) {
             process.stop();
         } else {
@@ -67,19 +74,13 @@ impl ProcessManager {
         }
     }
 
-    pub fn start_process(&mut self, pid: usize) {
-        if let Some(process) = self.processes.iter_mut().find(|p| p.pid == pid) {
-            process.start();
-        } else {
-            println!("Process with PID {} not found", pid);
-        }
+    pub fn add_process(&mut self, process: Process) {
+        self.processes.push(process);
     }
 
-    pub fn list_running_processes(&self) {
-        for process in &self.processes {
-            if let ProcessState::Running = process.state {
-                println!("PID: {}, Name: {}, State: Running", process.pid, process.name);
-            }
+    pub fn start_process(&mut self,pid: usize){
+        if let Some(process) = self.processes.iter_mut().find(|p| p.pid==pid){
+            process.start();
         }
     }
 }

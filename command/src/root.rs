@@ -1,8 +1,23 @@
 // build root
 
 pub struct UserState{
-    pub root: bool
+    pub root: UserRole
 }
+
+pub enum UserRole {
+    User,
+    Admin,
+}
+
+impl UserRole{
+    pub fn check_permission(&self) -> bool {
+        match self {
+            UserRole::Admin => true, // 管理员有权限执行任何操作
+            UserRole::User => false, // 普通用户无权限执行任何操作
+        }
+    }
+}
+
 
 pub struct Root {
     pub allowed_commands: Vec<String>,
@@ -10,21 +25,18 @@ pub struct Root {
 
 impl UserState {
     pub fn new() -> UserState{
-        let root = false;
+        let root = UserRole::User;
         UserState{
             root
         }
     }
 
-    pub fn toggle_root(&mut self) -> Self{
-        self.root = !&self.root;
-        Self{
-            root:self.root
-        }
+    pub fn toggle_root(&mut self){
+        self.root = UserRole::Admin;
     }
 
     pub fn exit_root(&mut self){
-        self.root=false;
+        self.root=UserRole::User;
     }
 }
 

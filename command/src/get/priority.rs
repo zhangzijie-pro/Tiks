@@ -7,7 +7,7 @@ pub enum CommandPriority {
 }
 
 impl CommandPriority{
-    fn as_number(&self) -> u8 {
+    pub fn as_number(&self) -> u8 {
         match *self {
             CommandPriority::Low => 0,
             CommandPriority::Medium => 1,

@@ -5,6 +5,7 @@ use crate::root::{decryption, SessionContext};
 use super::code::{html, python};
 use super::command::{apt, cp, echo_print, get_time, grep, history, ll, ls, pwd, rename, sudo, turn_dir, turn_file, update_new, whoami, xvf, zxvf};
 
+
 #[allow(dead_code)]
 #[derive(Clone)]
 pub struct Commands{
@@ -12,6 +13,7 @@ pub struct Commands{
     pub option: String,
     pub arg: Vec<String>
 }
+
 
 #[allow(unused_assignments)]
 impl Commands {
@@ -36,7 +38,7 @@ impl Commands {
                 }
             },
             _ =>{
-                if commands.contains(&"|".to_string())||commands.contains(&"&".to_string()){
+                if commands.contains(&"|".to_string())||commands.contains(&"&".to_string())||commands.contains(&"&&".to_string()){
                     arg=commands;
                 }else{
                     command = commands[0].clone();
@@ -70,6 +72,7 @@ pub fn command_match(commands: Commands,session_context: &mut SessionContext) ->
     }
 }
 
+
 #[allow(unused_assignments)]
 pub fn execute_command(command: &str, option: &str, arg: &Vec<String>, session_context: &mut SessionContext) -> Result<(usize,String), std::io::Error> {
     match command {
@@ -83,9 +86,9 @@ pub fn execute_command(command: &str, option: &str, arg: &Vec<String>, session_c
                     std::process::exit(0);
                 },
                 _=>{
-                    if session_context.user_state.root {
+                    if session_context.user_state.root.check_permission() {
                         session_context.user_state.exit_root();
-                        println!("Switched to root mode: {}", session_context.user_state.root);
+                        println!("Switched to root mode: {}", session_context.user_state.root.check_permission());
                     } else {
                         std::process::exit(0);
                     }
@@ -124,6 +127,7 @@ pub fn execute_command(command: &str, option: &str, arg: &Vec<String>, session_c
         _ => execute_other_command(command, option, arg),
     }
 }
+
 
 // match has arg's function
 pub fn execute_other_command(command: &str, option: &str, arg: &[String]) -> Result<(usize,String), std::io::Error> {
@@ -171,6 +175,7 @@ Error: Can't found this \x1B[31m{}\x1B[0m
         }
     }
 }
+
 
 fn turn_file_or_dir(command: &str, arg: &str) -> Result<(usize,String), std::io::Error> {
     if let Ok(res) = turn_file(command.to_string(), arg.to_string()) {

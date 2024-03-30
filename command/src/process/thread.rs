@@ -2,64 +2,67 @@ use std::{thread, time::Duration};
 
 use crate::get::priority::CommandPriority;
 
-#[derive(Clone,Debug)]
-pub struct Thread{
+
+#[derive(Clone, Debug)]
+pub struct Thread {
     pub tid: usize,
     pub name: String,
     pub priority: CommandPriority,
-    pub state: ThreadStatus
+    pub state: ThreadStatus,
 }
 
-#[derive(Debug,Clone)]
+
+#[derive(Debug, Clone)]
 pub enum ThreadStatus {
     Running,
     Block,
     Stopped,
 }
 
-impl Thread{
-    pub fn new(tid: usize, name: String,priority: CommandPriority) -> Self{
-        Thread{
+
+impl Thread {
+    pub fn new(tid: usize, name: String, priority: CommandPriority) -> Self {
+        Thread {
             tid,
             name,
             priority,
-            state: ThreadStatus::Running
+            state: ThreadStatus::Running,
         }
     }
 
-    pub fn stop(&mut self){
-        self.state=ThreadStatus::Stopped;
+    pub fn stop(&mut self) {
+        self.state = ThreadStatus::Stopped;
     }
 
-    pub fn sleep(&mut self){
-        self.state=ThreadStatus::Block;
+    pub fn sleep(&mut self) {
+        self.state = ThreadStatus::Block;
     }
 
-    pub fn start(&mut self){
-        self.state=ThreadStatus::Running;
+    pub fn start(&mut self) {
+        self.state = ThreadStatus::Running;
     }
 
-    pub fn status(&self) -> &ThreadStatus{
+    pub fn status(&self) -> &ThreadStatus {
         &self.state
     }
 }
 
 
-
 // TCB
-#[derive(Clone,Debug)]
-pub struct ThreadControlBlock{
+#[derive(Clone, Debug)]
+pub struct ThreadControlBlock {
     pub threads: Vec<Thread>,
 }
 
-impl ThreadControlBlock{
-    pub fn new() -> ThreadControlBlock{
-        ThreadControlBlock{
-            threads: Vec::new()
+
+impl ThreadControlBlock {
+    pub fn new() -> ThreadControlBlock {
+        ThreadControlBlock {
+            threads: Vec::new(),
         }
     }
 
-    pub fn add_thread(&mut self, thread: Thread){
+    pub fn add_thread(&mut self, thread: Thread) {
         self.threads.push(thread)
     }
 
@@ -79,23 +82,18 @@ impl ThreadControlBlock{
         }
     }
 
-    pub fn list_running_threads(&self) {
-        for thread in &self.threads {
-            if let ThreadStatus::Running = thread.state {
-                println!("TID: {}, Name: {}, State: Running", thread.tid, thread.name);
-            }
-        }
-    }
-
-    pub fn sleep_threads(&mut self,time: usize){
-        for thread in &mut self.threads{
+    pub fn sleep_threads(&mut self, time: usize) {
+        for thread in &mut self.threads {
             thread.sleep();
             thread::sleep(Duration::from_secs(time as u64));
-            thread.start()
+            thread.start();
         }
     }
 
     pub fn get_highest_priority_thread(&self) -> Option<usize> {
-        self.threads.iter().max_by(|a, b| a.priority.cmp(&b.priority)).map(|t| t.tid)
+        self.threads
+            .iter()
+            .max_by(|a, b| a.priority.cmp(&b.priority))
+            .map(|t| t.tid)
     }
 }

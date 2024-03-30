@@ -8,14 +8,13 @@
 
 use command::get::get_hty::get_last;
 use command::root::SessionContext;
-use command::commands::command::{and, history_push, pipe, pwd};
+use command::commands::command::{ and, history_push, pipe, priority_run, pwd};
 use command::run::run;
 use command::start_logo;
 use std::io::{self, Write};
 
 
-#[tokio::main]
-async fn main() {
+fn main() {
         start_logo::start_logo();
         let mut session_context = SessionContext::new();
         loop {
@@ -46,11 +45,13 @@ async fn main() {
                 }
             }else{
                 args.extend(command.split_whitespace().map(|s| s.to_string()));
-                if args.contains(&"&".to_string()){
+                if args.contains(&"&&".to_string()){
                     and(args.clone(), &mut session_context)
                 }else if args.contains(&"|".to_string()){
                     let s = pipe(args).unwrap();
                     println!("{}",s.1)
+                }else if args.contains(&"&".to_string()){
+                    priority_run(args.clone(), &mut session_context)
                 }else{
                     run(args.clone(),&mut session_context);
                 }
@@ -61,7 +62,7 @@ async fn main() {
 // root
 fn print_prompt(session_context: &mut SessionContext) {
     let mut whoami = session_context.get_username();
-    if session_context.user_state.root{
+    if session_context.user_state.root.check_permission(){
         whoami="root".to_string()
     }
     let pwd = pwd().unwrap().1;

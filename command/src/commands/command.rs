@@ -12,7 +12,7 @@ use lazy_static::lazy_static;
 // whoami
 pub fn whoami(session_context: &mut SessionContext) -> io::Result<(usize,String)>{
     let mut res = session_context.get_username();
-    if session_context.user_state.root{
+    if session_context.user_state.root.check_permission(){
         res = "root".to_string()
     }
 
@@ -302,6 +302,7 @@ pub fn cat(file: &str) -> Result<(usize,String),Error>{
 
 use crate::commands::download::{download_package, find_package};
 use crate::get::get_hty::file_create_time;
+use crate::get::priority::get_priority;
 use crate::run::run;
 use crate::state_code::{empty_dir, empty_file, missing_pattern,  STATUE_CODE};
 use super::download::update;
@@ -516,12 +517,29 @@ pub fn pipe(command:Vec<String>) -> io::Result<(usize,String)>{
     Ok((STATUE_CODE,output))
 }
 
-// &
+// &&
 pub fn and(command:Vec<String>,session_context: &mut SessionContext){
-    let commands = command.split(|x| x=="&");
+    let commands = command.split(|x| x=="&&");
     for c in commands{
         let v = c.to_vec();
         run(v, session_context)
+    }
+}
+
+// &
+pub fn priority_run(command:Vec<String>,session_context: &mut SessionContext){
+    let commands = command.split(|x| x=="&");
+    let mut save_command = Vec::new();
+    for c in commands{
+        let v = c.to_vec();
+        save_command.push(v);
+    }
+
+    save_command.sort_by_key(|c| -(get_priority(&c[0]).as_number() as i32));
+    println!("{:?}",save_command);
+
+    for c in save_command{
+        run(c, session_context)
     }
 }
 
