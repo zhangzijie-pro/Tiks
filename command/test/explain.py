@@ -1,8 +1,8 @@
 # command <example for test>
 # python xxx.py
 
-print("hello world")
+print("Tiks")
 for i in range(1,10):
-    print(i)
+    print("tiks test num: ",i)
 
-print("next")
+print("over")

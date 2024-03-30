@@ -12,8 +12,8 @@ pub enum UserRole {
 impl UserRole{
     pub fn check_permission(&self) -> bool {
         match self {
-            UserRole::Admin => true, // 管理员有权限执行任何操作
-            UserRole::User => false, // 普通用户无权限执行任何操作
+            UserRole::Admin => true, 
+            UserRole::User => false, 
         }
     }
 }

@@ -19,6 +19,7 @@ if not exist "%BIN_DIR%" mkdir "%BIN_DIR%"
 rem 复制文件到目标文件夹
 copy "%CD%\target\release\tiks.exe" "%BIN_DIR%"
 
+
 setx PATH "%PATH%;%TIKS_DIR%\bin"
 
 endlocal

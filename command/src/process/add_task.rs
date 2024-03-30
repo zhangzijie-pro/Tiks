@@ -1,4 +1,4 @@
-use crate::get::priority::CommandPriority;
+use crate::priority::CommandPriority;
 use crate::signal::Semaphore;
 
 use super::thread::Thread;

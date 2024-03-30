@@ -1,5 +1,4 @@
 use std::fs::File;
-use std::os::unix::fs::MetadataExt;
 use std::process::Command;
 use std::sync::{Mutex, RwLock};
 use std::{env, fs};
@@ -98,23 +97,28 @@ pub fn ll(context: &SessionContext) -> io::Result<(usize,String)>{
             format!("\x1B[32m{}    \x1B[0m", dir.path().display())
         };
 
-
-        // permission
-        let uid = matadata.uid();
-        let gid = matadata.gid();
-
-        let output_o = match uid{
-            1000=>context.get_username(),
-            0=>"root".to_string(),
-            _=>"-".to_string()
-        };
-
-        let output_p = match gid{
-            1000=>context.get_username(),
-            0=>"root".to_string(),
-            _=>"-".to_string()
-        };
         
+        // permission
+        #[cfg(windows)]
+        let (output_o, output_p) = ("", "");
+        
+        #[cfg(not(windows))]
+        use std::os::unix::fs::MetadataExt;
+        let (output_o, output_p) = {
+            let uid = matadata.uid();
+            let gid = matadata.gid();
+            let output_o = match uid {
+                1000 => context.get_username(),
+                0 => "root".to_string(),
+                _ => "-".to_string(),
+            };
+            let output_p = match gid {
+                1000 => context.get_username(),
+                0 => "root".to_string(),
+                _ => "-".to_string(),
+            };
+            (output_o, output_p)
+        };
 
         let size = matadata.len();
         
@@ -237,7 +241,7 @@ pub fn touch(file: &str) -> Result<(usize,String),std::io::Error>{
     if file.is_empty(){
         return Ok(empty_file());
     }
-    let _ = fs::File::create_new(Path::new(file))?;
+    let _ = fs::File::create(Path::new(file))?;
 
     let res = format!("Successfully created {}",file);
     Ok((STATUE_CODE,res))
@@ -301,8 +305,8 @@ pub fn cat(file: &str) -> Result<(usize,String),Error>{
 
 
 use crate::commands::download::{download_package, find_package};
-use crate::get::get_hty::file_create_time;
-use crate::get::priority::get_priority;
+use crate::priority::get_priority;
+use crate::set::set::file_create_time;
 use crate::run::run;
 use crate::state_code::{empty_dir, empty_file, missing_pattern,  STATUE_CODE};
 use super::download::update;

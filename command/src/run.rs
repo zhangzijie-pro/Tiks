@@ -1,8 +1,8 @@
-use crate::get::get_hty::error_log;
+use crate::priority::{get_priority, CommandPriority};
+use crate::set::set::error_log;
 use crate::process::process::ProcessManager;
 use crate::process::sleep;
 use crate::process::thread::ThreadControlBlock;
-use crate::get::priority::{get_priority, CommandPriority};
 use crate::process::add_task::{add_command_to_thread,add_thread_to_process};
 use crate::root::SessionContext;
 use crate::signal::semaphore_new;

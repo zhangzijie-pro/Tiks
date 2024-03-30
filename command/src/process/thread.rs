@@ -1,6 +1,7 @@
 use std::{thread, time::Duration};
 
-use crate::get::priority::CommandPriority;
+use crate::priority::CommandPriority;
+
 
 
 #[derive(Clone, Debug)]

@@ -6,7 +6,7 @@
 // There is some error or other suggestions contact me : zzj01262022@163.com
 // Cargo run
 
-use command::get::get_hty::get_last;
+use command::set::set::get_last;
 use command::root::SessionContext;
 use command::commands::command::{ and, history_push, pipe, priority_run, pwd};
 use command::run::run;
