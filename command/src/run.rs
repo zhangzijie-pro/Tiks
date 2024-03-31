@@ -48,7 +48,7 @@ pub fn run(args: Vec<String>,session_context: &mut SessionContext){
     match command.as_str(){
         "ps" => pcb.ps(),
         "kill" => match arg.is_empty(){
-            true => eprintln!("provide pid"),
+            true => {},
             _flase => pcb.kill(arg[0].parse::<usize>().unwrap())
         },
         "sleep" => sleep(&mut tcb, commands.arg[0].parse::<usize>().unwrap()),

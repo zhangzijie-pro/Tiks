@@ -16,6 +16,6 @@ APP_DIR_BIN="$HOME_DIR/.Tiks/bin"
 mkdir -p "$APP_DIR_BIN"
 
 # 添加环境变量
-cp ./target/release/tiks  "$APP_DIR_BIN"
+#cp ./target/release/tiks  "$APP_DIR_BIN"
 
-PATH=$PATH:/$HOME/.Tiks/bin
+#PATH=$PATH:/$HOME/.Tiks/bin

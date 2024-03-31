@@ -17,9 +17,9 @@ rem 如果 bin 文件夹不存在，则创建它
 if not exist "%BIN_DIR%" mkdir "%BIN_DIR%"
 
 rem 复制文件到目标文件夹
-copy "%CD%\target\release\tiks.exe" "%BIN_DIR%"
+rem copy "%CD%\target\release\tiks.exe" "%BIN_DIR%"
 
 
-setx PATH "%PATH%;%TIKS_DIR%\bin"
+rem setx PATH "%PATH%;%TIKS_DIR%\bin"
 
 endlocal
