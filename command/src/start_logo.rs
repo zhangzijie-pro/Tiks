@@ -17,7 +17,7 @@ pub fn strat_logo(){
 "#
     );
 println!("  * Contact us :  zzj01262022@163.com");
-println!("  * Github :  https://github.com/zhangzijie-pro/compress/");
+println!("  * Github :  https://github.com/zhangzijie-pro/Tiks/");
 println!("This message is shown once a day. Commands are saved only when the application is running")
 }
 
@@ -96,7 +96,7 @@ pub fn start_logo() {
     println!(
         "{}{}{}",
         color::Fg(color::Reset),
-        " * Github :  https://github.com/zhangzijie-pro/compress/",
+        " * Github :  https://github.com/zhangzijie-pro/Tiks/",
         style::Reset
     );
     println!();
