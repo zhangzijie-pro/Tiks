@@ -1,6 +1,3 @@
-use termion::{color, style};
-
-
 #[cfg(windows)]
 pub fn strat_logo(){
     println!("Welcome to Tiks (Simple Linux terminal)");
@@ -23,6 +20,7 @@ println!("This message is shown once a day. Commands are saved only when the app
 
 #[cfg(not(windows))]
 pub fn start_logo() {
+    use termion::{color, style};
     print!("{}[2J", 27 as char);
     // terimal width
     let terminal_width = match term_size::dimensions() {

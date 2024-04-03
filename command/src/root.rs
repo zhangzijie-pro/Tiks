@@ -226,6 +226,9 @@ pub fn decryption(pd: String) -> String{
     }
 }
 
+pub fn new_session() -> SessionContext{
+    SessionContext::new()
+}
 
 // for every os
 #[cfg(target_os="linux")]

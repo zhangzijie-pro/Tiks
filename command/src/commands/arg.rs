@@ -1,12 +1,11 @@
 use crate::commands::command::stdout_file;
 use crate::set::set::get_similar;
 use crate::root::{decryption, SessionContext};
+use crate::state_code::{missing_pattern, not_found};
 
-use super::code::{html, python};
-use super::command::{apt, cp, echo_print, get_time, grep, history, ll, ls, pwd, rename, sudo, turn_dir, turn_file, update_new, whoami, xvf, zxvf};
+use super::code::*;
+use super::command::*;
 
-
-#[allow(dead_code)]
 #[derive(Clone)]
 pub struct Commands{
     pub command: String,
@@ -17,50 +16,46 @@ pub struct Commands{
 
 #[allow(unused_assignments)]
 impl Commands {
-    pub fn new(commands: Vec<String>) -> Commands{
-        let len = commands.len();
+    pub fn new(commands: Vec<String>) -> Commands {
         let mut command = String::new();
         let mut option = String::new();
-        let mut arg: Vec<String> = Vec::new();
-        match len{
-            1=>{
-                command = commands[0].clone();
+        let mut arg = Vec::new();
+    
+        match commands.as_slice() {
+            [cmd] => {
+                command = cmd.clone();
             }
-            2 =>{
-                command = commands[0].clone();
-                match commands[1].starts_with("-"){
-                    true => {
-                        option=commands[1].clone()
-                    },
-                    false =>{
-                        arg.push(commands[1].clone())
-                    }
+            [cmd, opt_or_arg] => {
+                command = cmd.clone();
+                if opt_or_arg.starts_with("-") || opt_or_arg == ">" {
+                    option = opt_or_arg.clone();
+                } else {
+                    arg.push(opt_or_arg.clone());
                 }
-            },
-            _ =>{
-                if commands.contains(&"|".to_string())||commands.contains(&"&".to_string())||commands.contains(&"&&".to_string()){
-                    arg=commands;
-                }else{
-                    command = commands[0].clone();
-                    match commands[1].starts_with("-")|| commands[1]==">"{
-                        true => {
-                            option=commands[1].clone()
-                        },
-                        false =>{
-                            arg.push(commands[1].clone())
-                        }
-                    }
-                    option = commands[1].clone();
-                    arg.append(&mut commands[2..=len-1].to_vec())
+            }
+            [cmd, opt, args @ ..] => {
+                command = cmd.clone();
+                if opt.starts_with("-") || opt == ">" {
+                    option = opt.clone();
+                } else {
+                    arg.push(opt.clone());
+                }
+                arg.extend_from_slice(args);
+            }
+            _ => {
+                if commands.iter().any(|x| x == "|" || x == "&" || x == "&&") {
+                    arg = commands;
                 }
             }
         }
-        Commands{
+    
+        Commands {
             command,
             option,
-            arg
+            arg,
         }
     }
+    
 }
 
 
@@ -98,27 +93,27 @@ pub fn execute_command(command: &str, option: &str, arg: &Vec<String>, session_c
         },
         "apt"=>match option{ // arg
             "-i"|"-install"=>match arg.is_empty(){
-                true=>Ok((0,"Error: Missing parameters".to_string())),
-                false=>apt(&arg[0].clone())
+                true=>Ok(missing_pattern()),
+                false=>apt(&arg[0])
             }
             "-u"|"-update"=>match arg.is_empty(){
-                true=>Ok((0,"Error: Missing parameters".to_string())),
-                false=>update_new(&arg[0].clone())
+                true=>Ok(missing_pattern()),
+                false=>update_new(&arg[0])
             }
-            _=>Err(std::io::Error::new(std::io::ErrorKind::Other, format!("Error: can't found apt {}", option)))
+            _=>Ok(not_found())
         },
         "whoami" => whoami(session_context),
         "pd" => match option{  // match arg empty
             "-f"|"-fix" => match arg.is_empty(){
-                true=>Ok((0,"Error: Missing parameters".to_string())),
-                false=>session_context.user.revise_password(&arg[0].clone())
+                true=>Ok(missing_pattern()),
+                false=>session_context.user.revise_password(&arg[0])
             }
             "-c"|"-check"=>Ok({
                 let pd = session_context.user.password.clone();
-                let password = decryption(pd.clone());
+                let password = decryption(pd);
                 (0,password)
             }),
-            _=>Err(std::io::Error::new(std::io::ErrorKind::Other, format!("Error: can't found pd {}", option))),
+            _=>Ok(not_found()),
         },
         "ll" => {
             let va = ll(&session_context).unwrap();
@@ -137,31 +132,31 @@ pub fn execute_other_command(command: &str, option: &str, arg: &[String]) -> Res
         "history" => history(),
         "ls" | "l" => ls(),
         "grep" => match arg.is_empty(){
-            true=>Ok((0,"Error: Missing parameters".to_string())),
+            true=>Ok(missing_pattern()),
             false=>grep(&arg[0], &arg[1])
         },
         "echo"|"print" => Ok(echo_print(arg[0].clone())),
         "cd" | "rm" | "mkdir" | "touch" | "python" | "html" | "web" | "cat" => match arg.is_empty(){
-            true=>Ok((0,"Error: Missing parameters".to_string())),
+            true=>Ok(missing_pattern()),
             false=>turn_file_or_dir(command, &arg[0])
         }
         "tar" => match option {
             "-zxvf" => match arg.is_empty(){
-                true=>Ok((0,"Error: Missing parameters".to_string())),
+                true=>Ok(missing_pattern()),
                 false=>zxvf(&arg[0], &arg[1]),
             } 
             "-xvf" => match arg.is_empty(){
-                true=>Ok((0,"Error: Missing parameters".to_string())),
+                true=>Ok(missing_pattern()),
                 false=> xvf(&arg[0]),
             }
-            _ => Err(std::io::Error::new(std::io::ErrorKind::Other, format!("Error: can't found tar {}", option))),
+            _ => Ok(not_found()),
         },
         "rn"|"mv" =>match arg.is_empty(){
-            true=>Ok((0,"Error: Missing parameters".to_string())),
+            true=>Ok(missing_pattern()),
             false=>  rename(&arg[0], &arg[1]),
         }
         "cp"=> match arg.is_empty(){
-            true=>Ok((0,"Error: Missing parameters".to_string())),
+            true=>Ok(missing_pattern()),
             false=>cp(&arg[0], &arg[1]),
         }
         _ =>{
@@ -171,7 +166,7 @@ Error: Can't found this \x1B[31m{}\x1B[0m
     Did you mean?
 {}", command,similar
             );
-            Ok((404,output))
+            Ok((403,output))
         }
     }
 }
@@ -184,12 +179,7 @@ fn turn_file_or_dir(command: &str, arg: &str) -> Result<(usize,String), std::io:
         Ok(res)
     } else if let Ok(res) = run_code(&command.to_string(), Some(arg)) {
         Ok(res)
-    } else {
-        Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            format!("Error: Can't found this: \x1B[33m{}\x1B[0m", command),
-        ))
-    }
+    } else {Ok(not_found())}
 }
 
 
@@ -206,7 +196,7 @@ fn run_code(command: &String,file: Option<&str>) -> Result<(usize,String),std::i
 Command '{}' not found, did you mean:
     apt install {}
         ",command,command);
-            (2,apt)
+            (408,apt)
         }) 
     }
 }

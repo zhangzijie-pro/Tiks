@@ -547,8 +547,24 @@ pub fn priority_run(command:Vec<String>,session_context: &mut SessionContext){
     }
 }
 
-pub fn echo_print<T: std::fmt::Debug>(output: T) -> (usize,T){
-    (STATUE_CODE,output)
+fn get_env(id: String) -> String{
+    let path = id.replace("$", "");
+    if let Some(val) = env::var(&path).ok(){
+        val
+    }else{
+        panic!("Error: {} is not exist",path)
+    }
+}
+
+
+pub fn echo_print<T: std::fmt::Display + From<String>>(output: T) -> (usize,T){
+    let var = format!("{}", output);
+    if var.contains("$") {
+        let val = get_env(var);
+        return (0, val.into());
+    }else{
+        (0, output)
+    }
 }
 
 // turn vec<_> to Commands
@@ -556,3 +572,9 @@ fn  turn_command(v: Vec<String>) -> Commands{
     let ouput = Commands::new(v);
     ouput
 }
+
+/*
+    fn nano(){
+        
+    }
+*/

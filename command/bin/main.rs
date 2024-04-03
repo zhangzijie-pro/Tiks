@@ -6,67 +6,19 @@
 // There is some error or other suggestions contact me : zzj01262022@163.com
 // Cargo run
 
-use command::set::set::get_last;
-use command::root::SessionContext;
-use command::commands::command::{ and, history_push, pipe, priority_run, pwd};
-use command::run::run;
-use command::start_logo;
-use std::io::{self, Write};
 
+
+use command::env::set_env;
+use command::run::init_shell;
+use command::start_logo::start_logo;
+use command::root::new_session;
 
 fn main() {
-        start_logo::start_logo();
-        let mut session_context = SessionContext::new();
-        loop {
-            let mut args: Vec<String> = Vec::new();
-            let mut input = String::new();
-            print_prompt(&mut session_context);
-        
-            if let Err(err) = io::stdin().read_line(&mut input) {
-                eprintln!("Failed to read input: {}", err);
-                continue;
-            }
-        
-            let command = input.trim();
-            history_push(command.to_string());
-
-            if command.is_empty() {
-                continue; // Ignore empty commands
-            }else if command.parse::<usize>().is_ok(){
-                let (_i,res) = get_last(command.parse::<usize>().unwrap());
-                match res{
-                    Some(command) => {
-                        args.extend(command.split_whitespace().map(|s| s.to_string()));
-                        run(args.clone(),&mut session_context);
-                    },
-                    None =>{
-                        continue;
-                    }
-                }
-            }else{
-                args.extend(command.split_whitespace().map(|s| s.to_string()));
-                if args.contains(&"&&".to_string()){
-                    and(args.clone(), &mut session_context)
-                }else if args.contains(&"|".to_string()){
-                    let s = pipe(args).unwrap();
-                    println!("{}",s.1)
-                }else if args.contains(&"&".to_string()){
-                    priority_run(args.clone(), &mut session_context)
-                }else{
-                    run(args.clone(),&mut session_context);
-                }
-            }
-        }
-}
-
-// root
-fn print_prompt(session_context: &mut SessionContext) {
-    let mut whoami = session_context.get_username();
-    if session_context.user_state.root.check_permission(){
-        whoami="root".to_string()
-    }
-    let pwd = pwd().unwrap().1;
-    let input = format!("\x1B[32;1m{}\x1B[0m:\x1B[34m{}>>\x1B[0m ",whoami,pwd); // Assuming whoami() returns the current user
-    print!("{}",input);
-    io::stdout().flush().unwrap();
+        start_logo();
+        let mut session_context = new_session();
+        #[cfg(target_os="linux")]
+        set_env();
+        #[cfg(target_os="windows")]
+        env();
+        init_shell(&mut session_context)
 }

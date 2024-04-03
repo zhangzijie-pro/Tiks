@@ -28,3 +28,7 @@ pub fn empty_dir() -> (usize, String) {
 pub fn pipe_err() -> (usize,String){
     (110,"Error: Meaningless".to_string())
 }
+
+pub fn not_found() -> (usize,String){
+    (404,"Error: Not found this command in terimal".to_string())
+}

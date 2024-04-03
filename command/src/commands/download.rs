@@ -1,6 +1,7 @@
 // as linux "apt" to download some file or software
 
 // download file in web such as : http:*********
+// maybe there are some error 
 use std::fs::File;
 use std::io::{copy, Write};
 use reqwest::Client;

@@ -17,6 +17,13 @@
 - Windows:     执行./window/setup.bat    ->  setx PATH "%PATH%;%TIKS_DIR%\bin"
 - mac & Linux: 执行./mac_linux/setup.sh  ->  PATH=$PATH:/$HOME/.Tiks/bin   
 
+## 添加方法函数
+
+如果想向其中添加其余函数:
+
+- C: [readme](./command/c_build/README.md)
+- rust: 添加到command.rs
+
 ## 功能特点
 
 - 提供常用的 Linux 命令，如 `pwd`, `ls`, `cd`, `rm`, `touch`, `cat`, `python` 等。

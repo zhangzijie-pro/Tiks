@@ -1,5 +1,6 @@
+use crate::commands::command::*;
 use crate::priority::{get_priority, CommandPriority};
-use crate::set::set::error_log;
+use crate::set::set::{error_log, get_last};
 use crate::process::process::ProcessManager;
 use crate::process::sleep;
 use crate::process::thread::ThreadControlBlock;
@@ -7,6 +8,7 @@ use crate::process::add_task::{add_command_to_thread,add_thread_to_process};
 use crate::root::SessionContext;
 use crate::signal::semaphore_new;
 
+use std::io::{self, Write};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::commands::arg::{command_match, split, Commands};
@@ -90,4 +92,60 @@ pub fn run(args: Vec<String>,session_context: &mut SessionContext){
         }
     }
     
+}
+
+
+pub fn init_shell(session_context: &mut SessionContext){
+    loop {
+        let mut args: Vec<String> = Vec::new();
+        let mut input = String::new();
+        print_prompt(session_context);
+    
+        if let Err(err) = io::stdin().read_line(&mut input) {
+            eprintln!("Failed to read input: {}", err);
+            continue;
+        }
+    
+        let command = input.trim();
+        history_push(command.to_string());
+
+        if command.is_empty() {
+            continue; // Ignore empty commands
+        }else if command.parse::<usize>().is_ok(){
+            let (_i,res) = get_last(command.parse::<usize>().unwrap());
+            match res{
+                Some(command) => {
+                    args.extend(command.split_whitespace().map(|s| s.to_string()));
+                    run(args.clone(),session_context);
+                },
+                None =>{
+                    continue;
+                }
+            }
+        }else{
+            args.extend(command.split_whitespace().map(|s| s.to_string()));
+            if args.contains(&"&&".to_string()){
+                and(args.clone(), session_context)
+            }else if args.contains(&"|".to_string()){
+                let s = pipe(args).unwrap();
+                println!("{}",s.1)
+            }else if args.contains(&"&".to_string()){
+                priority_run(args.clone(), session_context)
+            }else{
+                run(args.clone(),session_context);
+            }
+        }
+    }
+}
+
+// root
+fn print_prompt(session_context: &mut SessionContext) {
+    let mut whoami = session_context.get_username();
+    if session_context.user_state.root.check_permission(){
+        whoami="root".to_string()
+    }
+    let pwd = pwd().unwrap().1;
+    let input = format!("\x1B[32;1m{}\x1B[0m:\x1B[34m{}>>\x1B[0m ",whoami,pwd); // Assuming whoami() returns the current user
+    print!("{}",input);
+    io::stdout().flush().unwrap();
 }
