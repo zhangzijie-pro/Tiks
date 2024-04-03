@@ -21,7 +21,7 @@
 
 如果想向其中添加其余函数:
 
-- C: [readme](./command/c_build/README.md)
+- C: [C文件上传到rust](./command/c_build/README.md)
 - rust: 添加到command.rs
 
 ## 功能特点
@@ -59,6 +59,14 @@ Commands:
     tar -xvf:   压缩文件
     exit        退出当前进程
 ```
+
+# Rust 安装工具
+
+如果你还未安装 Rust 编程语言的开发工具链，你可以在 [Rust 官方网站](https://www.rust-lang.org/tools/install) 上找到安装说明和工具链下载链接。
+
+点击下面的链接即可前往 Rust 官方网站下载页面：
+
+[点击此处下载 Rust 工具链](https://www.rust-lang.org/tools/install)
 
 ## 贡献
 
