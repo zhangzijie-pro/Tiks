@@ -5,8 +5,8 @@ pub fn missing_pattern() -> (usize, String) {
     (104, "Error: Missing parameters".to_string())
 }
 
-pub fn exit_code() -> (usize, String) {
-    (0, "Exit".to_string())
+pub fn env() -> (usize, String) {
+    (STATUE_CODE, "Env set over".to_string())
 }
 
 pub fn run_code_er() -> (usize, String) {
@@ -14,7 +14,7 @@ pub fn run_code_er() -> (usize, String) {
 }
 
 pub fn run_code() -> (usize, String) {
-    (0, "Running...".to_string())
+    (STATUE_CODE, "Running...".to_string())
 }
 
 pub fn empty_file() -> (usize, String) {
@@ -31,4 +31,9 @@ pub fn pipe_err() -> (usize,String){
 
 pub fn not_found() -> (usize,String){
     (404,"Error: Not found this command in terimal".to_string())
+}
+
+pub fn normal_success<T: std::fmt::Display + From<String>>(output:T) -> (usize,String){
+    let output = format!("{}",output);
+    (STATUE_CODE,output)
 }

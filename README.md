@@ -21,8 +21,8 @@
 
 如果想向其中添加其余函数:
 
-- C: [C文件上传到rust](./command/c_build/README.md)
-- rust: 添加到command.rs
+- C: [详见C添加方法](./command/c_build/README.md)
+- rust: [详间rust添加方法](./command/src/commands/README.md)
 
 ## 功能特点
 
@@ -73,15 +73,15 @@ Commands:
 如果你希望贡献代码或改进本项目，请先进行以下操作：
 
 1. Fork 本项目
-2. 在你的本地克隆项目：\`git clone https://github.com/zhangzijie-pro/Tiks.git\`
-3. 进入项目目录：\`cd 项目名称\`
-4. 运行代码：\`cargo run\`
+2. 在你的本地克隆项目：``` git clone https://github.com/zhangzijie-pro/Tiks.git ```
+3. 进入项目目录：``` cd 项目名称 ```
+4. 运行代码：``` cargo run ```
 
 请确保你已经安装了 Rust 编程语言以及 Cargo 包管理器。
 
 5. 在你的本地进行修改、添加新功能或修复错误
-6. 将修改推送到你的 GitHub 仓库：\`git push origin master\`
-7. 创建一个 Pull 请求，向本项目的 \`master\` 分支提交你的修改
+6. 将修改推送到你的 GitHub 仓库：``` git push origin master ```
+7. 创建一个 Pull 请求，向本项目的 ``` master ``` 分支提交你的修改
 
 ## 联系我们
 

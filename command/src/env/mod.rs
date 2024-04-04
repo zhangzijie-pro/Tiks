@@ -1,7 +1,9 @@
 #[cfg(target_os="linux")]
 
-pub fn set_env(){
+pub fn set_env() -> (usize,String){
     use std::{env, path::PathBuf};
+
+    use crate::state_code::env;
 
     let mut path = match env::var_os("PATH"){
         Some(val) => env::split_paths(&val).collect::<Vec<_>>(),
@@ -20,13 +22,17 @@ pub fn set_env(){
     let new_path = env::join_paths(path).expect("Failed join paths");
 
     env::set_var("PATH", new_path);
+
+    env()
 }
 
 #[cfg(target_os="windows")]
 
-pub fn env(){
+pub fn set_env() -> (usize,String){
     use std::env;
     use std::path::PathBuf;
+
+    use crate::state_code::env;
 
     let path = env::var_os("PATH").unwrap_or_default();
     let mut paths = env::split_paths(&path).collect::<Vec<_>>();
@@ -37,5 +43,7 @@ pub fn env(){
     paths.push(tiks_bin);
 
     let new_path = env::join_paths(paths).expect("Failed to join paths");
-    env::set_var("PATH", new_path)
+    env::set_var("PATH", new_path);
+
+    env()
 }

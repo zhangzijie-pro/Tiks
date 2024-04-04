@@ -9,19 +9,24 @@
 
 完成后，可在command.rs中声明方法，并在arg.rs中进行配置
 
+```bash
+    ./build_c.sh vim vim.c vim.so
+```
+
+
 ```rust
     extern {
-        fn nano_edit(filename: *const libc::c_char);
+        fn vim_edit(filename: *const libc::c_char);
     }
 
-    #[link(name = "nano")]
+    #[link(name = "vim")]
     extern {}
 
     fn main() {
         let filename = "example.txt";
         unsafe {
             let filename_c = std::ffi::CString::new(filename).expect("CString::new failed");
-            nano_edit(filename_c.as_ptr());
+            vim_edit(filename_c.as_ptr());
         }
     }
 ```
