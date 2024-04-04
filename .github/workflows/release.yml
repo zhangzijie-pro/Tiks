@@ -13,10 +13,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Set up Rust
-        uses: actions/setup-rust@v1
+        uses: actions/checkout@v
 
       - name: Build Release Binary
         run: cargo build --release
