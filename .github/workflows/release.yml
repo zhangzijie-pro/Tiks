@@ -10,8 +10,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    steps:
-      - name: Build Release Binary
+    steps:    
+      - uses: actions/checkout@v3
+      - name: Build
         run: cargo build --release
 
       - name: Archive Release Binary
