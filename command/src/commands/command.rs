@@ -68,6 +68,7 @@ pub fn ls() -> io::Result<(usize,String)> {
 
 
 // ll
+#[allow(unused_assignments)]
 pub fn ll(context: &SessionContext) -> io::Result<(usize,String)>{
     let dir_path = Path::new("./");
     let mut result = String::new();
@@ -97,12 +98,11 @@ pub fn ll(context: &SessionContext) -> io::Result<(usize,String)>{
             format!("\x1B[32m{}    \x1B[0m", dir.path().display())
         };
 
+        let mut output_or = String::new();
+        let mut output_pr=String::new();
         
         // permission
-        #[cfg(windows)]
-        let (output_o, output_p) = ("", "");
-        
-        #[cfg(not(windows))]
+        #[cfg(not(windows))]{
         use std::os::unix::fs::MetadataExt;
         let (output_o, output_p) = {
             let uid = matadata.uid();
@@ -117,8 +117,11 @@ pub fn ll(context: &SessionContext) -> io::Result<(usize,String)>{
                 0 => "root".to_string(),
                 _ => "-".to_string(),
             };
-            (output_o, output_p)
+            (output_o,output_p)
         };
+        output_or = output_o;
+        output_pr = output_p;
+        }
 
         let size = matadata.len();
         
@@ -132,8 +135,8 @@ pub fn ll(context: &SessionContext) -> io::Result<(usize,String)>{
         result.push_str(&format!(
             "{} {}  {:>8}   {:>6} {}  {}\n",
             file_type_str,
-            output_p,
-            output_o,
+            output_pr,
+            output_or,
             size,
             time,
             file_name
@@ -574,7 +577,7 @@ fn  turn_command(v: Vec<String>) -> Commands{
 }
 
 /*
-    fn nano(){
+    fn vim(){
         
     }
 */

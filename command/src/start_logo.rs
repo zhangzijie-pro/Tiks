@@ -1,5 +1,5 @@
 #[cfg(windows)]
-pub fn strat_logo(){
+pub fn start_logo() {
     println!("Welcome to Tiks (Simple Linux terminal)");
     println!(
         "\x1B[31m{}\x1B[0m",

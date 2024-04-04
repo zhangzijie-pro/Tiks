@@ -22,13 +22,11 @@ dirs = "5.0"
 rpassword = "7.3.0"
 libc = "0.2.153"
 base64 = "0.22.0"
-term_size = { version = "0.3.0", optional = false }
-termion = { version = "3.0.0", optional = false }
 
 
 [target.'cfg(not(target_os = "windows"))'.dependencies]
-term_size = { version = "0.3.0", optional = true }
-termion = { version = "3.0.0", optional = true }
+term_size = "0.3.0"
+termion = "3.0.0"
 
 [[bin]]
 name = "tiks"
