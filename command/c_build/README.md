@@ -8,6 +8,7 @@
 
 
 完成后，可在command.rs中声明方法，并在arg.rs中进行配置
+详见:[rust添加方法](../src/commands/README.md)
 
 ```bash
     ./build_c.sh vim vim.c vim.so
