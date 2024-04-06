@@ -1,4 +1,5 @@
 pub const STATUE_CODE:usize=0;
+pub const ERR_CODE:usize=109;
 
 
 pub fn missing_pattern() -> (usize, String) {

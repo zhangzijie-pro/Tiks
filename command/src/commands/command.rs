@@ -32,6 +32,7 @@ pub fn help() -> String{
     cat     View file only read                            mv          Move file's path
     python  Run code in python                             tar -zxvf:  Compression  
     html    Open html file                                 tar -xvf:   Decompression
+    pd      Check your password                            sudo        Root
     exit    Exit this process\0\x1B[0m\n"
     );
 
@@ -300,18 +301,26 @@ pub fn cat(file: &str) -> Result<(usize,String),Error>{
     if file.is_empty(){
         return Ok(empty_file());
     }
-    let f = fs::File::open(Path::new(file));
     let mut buffer = String::new();
-    let _ = f.unwrap().read_to_string(&mut buffer);
+    let file_size = max_size_file(file);
+    match file_size{
+        Ok(_) =>{
+            let f = fs::File::open(Path::new(file)); 
+            let _ = f.unwrap().read_to_string(&mut buffer);
+        },
+        Err(err) =>{
+            return Ok((ERR_CODE,err.to_string()));
+        }
+    }
     Ok((STATUE_CODE,buffer))
 }
 
 
 use crate::commands::download::{download_package, find_package};
 use crate::priority::get_priority;
-use crate::set::set::file_create_time;
+use crate::set::set::{file_create_time, max_size_file};
 use crate::run::run;
-use crate::state_code::{empty_dir, empty_file, missing_pattern,  STATUE_CODE};
+use crate::state_code::{empty_dir, empty_file, missing_pattern, ERR_CODE, STATUE_CODE};
 use super::download::update;
 use crate::root::SessionContext;
 
