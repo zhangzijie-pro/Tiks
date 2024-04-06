@@ -1,4 +1,3 @@
-use crate::commands::command::stdout_file;
 use crate::set::set::get_similar;
 use crate::root::{decryption, SessionContext};
 use crate::state_code::{missing_pattern, not_found};

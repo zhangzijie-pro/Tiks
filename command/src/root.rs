@@ -43,7 +43,6 @@ impl UserState {
 use std::io::{self,Write};
 use std::fs;
 use std::process::Command;
-use dirs;
 
 
 pub struct User{
@@ -181,7 +180,6 @@ fn get_username(user: &mut String){
     io::stdin().read_line(user).unwrap();
 }
 
-use rpassword;
 fn get_password() -> String{
     loop {
         println!("Enter password:");

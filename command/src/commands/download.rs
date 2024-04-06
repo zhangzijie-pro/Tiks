@@ -57,7 +57,6 @@ async fn download(link: &str, filename: &str) -> Result<(),Box<dyn std::error::E
 }
 
 
-use dirs;
 // apt update new
 pub fn update(version: &str) -> std::io::Result<()>{
     let mut version = version;

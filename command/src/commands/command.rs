@@ -460,7 +460,6 @@ pub fn sudo(session_context: &mut SessionContext)->io::Result<(usize,String)>{
 
 
 // get time
-use chrono;
 pub fn get_time() -> io::Result<(usize,String)>{
     let now = chrono::Local::now();
     let time = now.format("%Y-%m-%d %H:%M:%S").to_string();
