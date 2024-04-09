@@ -8,7 +8,7 @@
 
 
 
-use command::env::set_env;
+use command::env::init_env;
 use command::run::init_shell;
 use command::start_logo::start_logo;
 use command::root::new_session;
@@ -20,7 +20,7 @@ fn main() {
         let mut session_context = new_session();
 
         // set os envirment path in Tiks
-        set_env();
+        init_env();
 
         // init shell
         init_shell(&mut session_context)
