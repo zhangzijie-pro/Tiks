@@ -302,25 +302,18 @@ pub fn cat(file: &str) -> Result<(usize,String),Error>{
         return Ok(empty_file());
     }
     let mut buffer = String::new();
-    let file_size = max_size_file(file);
-    match file_size{
-        Ok(_) =>{
-            let f = fs::File::open(Path::new(file)); 
-            let _ = f.unwrap().read_to_string(&mut buffer);
-        },
-        Err(err) =>{
-            return Ok((ERR_CODE,err.to_string()));
-        }
-    }
+    let f = fs::File::open(Path::new(file)); 
+    let _ = f.unwrap().read_to_string(&mut buffer);
+
     Ok((STATUE_CODE,buffer))
 }
 
 
 use crate::commands::download::{download_package, find_package};
 use crate::priority::get_priority;
-use crate::set::set::{file_create_time, max_size_file};
+use crate::set::set::file_create_time;
 use crate::run::run;
-use crate::state_code::{empty_dir, empty_file, missing_pattern, ERR_CODE, STATUE_CODE};
+use crate::state_code::{empty_dir, empty_file, missing_pattern, STATUE_CODE};
 use super::download::update;
 use crate::root::SessionContext;
 
@@ -551,7 +544,6 @@ pub fn priority_run(command:Vec<String>,session_context: &mut SessionContext){
     }
 
     save_command.sort_by_key(|c| -(get_priority(&c[0]).as_number() as i32));
-    println!("{:?}",save_command);
 
     for c in save_command{
         run(c, session_context)

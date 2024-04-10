@@ -56,6 +56,16 @@ pub struct ThreadControlBlock {
 }
 
 
+#[allow(dropping_references)]
+impl Drop for ThreadControlBlock{
+    fn drop(&mut self) {
+        for i in self.threads.iter_mut(){
+            drop(&i);
+            i.stop()
+        }
+    }
+}
+
 impl ThreadControlBlock {
     pub fn new() -> ThreadControlBlock {
         ThreadControlBlock {

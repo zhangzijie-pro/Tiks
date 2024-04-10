@@ -4,14 +4,16 @@ pub enum CommandPriority {
     Low,
     Medium,
     High,
+    Unknow,
 }
 
 impl CommandPriority{
     pub fn as_number(&self) -> u8 {
         match *self {
-            CommandPriority::Low => 0,
-            CommandPriority::Medium => 1,
-            CommandPriority::High => 2,
+            CommandPriority::Unknow => 0,
+            CommandPriority::Low => 1,
+            CommandPriority::Medium => 2,
+            CommandPriority::High => 3,
         }
     }
 }
@@ -28,6 +30,6 @@ pub fn get_priority(command: &str) -> CommandPriority{
         "pwd"|"ls"|"mkdir"|"touch"|"whoami"|"exit" => CommandPriority::Low,
         "cd"|"rm"|"cat"|"python"|"html"|"web"|"rn"|"mv"|"tar"|"grep"|"pd"|"root"|"apt"|"history" => CommandPriority::Medium,
         "sleep"|"kill"|"ps"=> CommandPriority::High,
-        _ => CommandPriority::Low
+        _ => CommandPriority::Unknow
     }
 }

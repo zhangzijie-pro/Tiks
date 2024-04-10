@@ -53,6 +53,16 @@ pub struct ProcessManager {
     pub processes: Vec<Process>,
 }
 
+#[allow(dropping_references)]
+impl Drop for ProcessManager{
+    fn drop(&mut self) {
+        for i in self.processes.iter_mut(){
+            drop(&i);
+            i.stop()
+        }
+    }
+}
+
 impl ProcessManager {
     pub fn new() -> Self {
         ProcessManager {
