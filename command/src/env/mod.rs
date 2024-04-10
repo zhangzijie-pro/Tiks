@@ -1,5 +1,5 @@
 #[cfg(target_os="linux")]
-fn set_env_l() -> (usize,String){
+fn set_env() -> (usize,String){
     use std::{env, path::PathBuf};
 
     use crate::state_code::env;
@@ -26,7 +26,7 @@ fn set_env_l() -> (usize,String){
 }
 
 #[cfg(target_os="windows")]
-fn set_env_w() -> (usize,String){
+fn set_env() -> (usize,String){
     use std::env;
     use std::path::PathBuf;
 
@@ -48,7 +48,7 @@ fn set_env_w() -> (usize,String){
 
 pub fn init_env(){
     #[cfg(target_os="windows")]
-    set_env_w();
+    set_env();
     #[cfg(target_os="linux")]
-    set_env_l();
+    set_env();
 }

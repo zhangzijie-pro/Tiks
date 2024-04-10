@@ -3,31 +3,49 @@
 确保你的系统中存在C/C++环境与gcc工具链
 
 - 向文件夹c中加入你的c代码后
--  chmod +x ./build_c.sh
--  Usage: ./build_c.sh <source_file> <output_object_file(.c)> <output_shared_library_file(.so)>
+- 见一下代码    [详细的了解cc](https://docs.rs/cc/1.0.92/cc/)
 
 
 完成后，可在command.rs中声明方法，并在arg.rs中进行配置
 详见:[rust添加方法](../src/commands/README.md)
 
-```bash
-    ./build_c.sh vim vim.c vim.so
-```
-
-
 ```rust
-    extern {
-        fn vim_edit(filename: *const libc::c_char);
+    
+    //build.rs
+    // C
+    fn main() {
+        cc::Build::new()
+            .file("foo.c")
+            .file("bar.c")
+            .compile("foo");
     }
 
-    #[link(name = "vim")]
-    extern {}
+    // C++
+    fn main(){
+        cc::Build::new()
+            .cpp(true)
+            .file("foo.cpp")
+            .compile("foo")
+    }
+    
+    // cargo build 后会将以上.c文件编译为libfoo.a
+    // 如果你的方法中包含有
+    void foo_function(void) { ... }  和  int32_t bar_function(int32_t x) { ... }
+
+
+    extern "C" {
+        fn foo_function();
+        fn bar_function(x: i32) -> i32;
+    }
+
+    pub fn call() {
+        unsafe {
+            foo_function();
+            bar_function(42);
+        }
+    }
 
     fn main() {
-        let filename = "example.txt";
-        unsafe {
-            let filename_c = std::ffi::CString::new(filename).expect("CString::new failed");
-            vim_edit(filename_c.as_ptr());
-        }
+        call();
     }
 ```

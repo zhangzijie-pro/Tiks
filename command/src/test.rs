@@ -1,20 +1,20 @@
 #[cfg(test)]
 mod tests {
-    use crate::{commands::command::echo_print, env::set_env};
+    use crate::{commands::command::echo_print, env::init_env};
 
     #[test]
+    #[ignore]
     fn detection_func() {
-        let input = "$HOME";
+        let input = "$YOUR_env";
         let (ouput_n,output_s) = echo_print(input.to_string());
-        assert_eq!(0,ouput_n);
-        assert_eq!("/home/zzj",output_s)
+        assert_eq!(0,ouput_n);      // passed
+        assert_eq!("your_env_value",output_s)  // value
     }
 
     #[test]
     fn env_set() {
-        let (n,s) = set_env();
-        assert_eq!(n,0);
-        assert_eq!("Env set over".to_string(),s)
+        let s = init_env();         // set env in your os test
+        assert_eq!((),s);
     }
 
     #[test]

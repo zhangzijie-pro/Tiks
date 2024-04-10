@@ -3,8 +3,6 @@
 欢迎使用 Tiks，一个简易的 Linux 终端命令行工具，类似于常见的 Linux 终端环境，提供了一系列常用的命令和功能。
 #### 供参考，若有错误改进地方可push到main
 
-![Project Logo](images/new.png)
-
 ## 环境变量
 
 如果想将其加入环境变量：
@@ -12,6 +10,8 @@
 ```bash
     Cargo build --release
     cp | copy  ./target/release/tiks  $HOME/.Tiks/bin
+    或者下载 tiks / tiks.exe
+    添加至.Tiks目录下的bin中
 ```
 
 - Windows:     执行./window/setup.bat    ->  setx PATH "%PATH%;%TIKS_DIR%\bin"
@@ -21,7 +21,7 @@
 
 如果想向其中添加其余函数:
 
-- C: [详见C添加方法](./command/c_build/README.md)
+- C\C++: [详见添加方法](./command/c_build/README.md)
 - rust: [详间rust添加方法](./command/src/commands/README.md)
 
 ## 功能特点

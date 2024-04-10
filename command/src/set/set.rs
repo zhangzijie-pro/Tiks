@@ -136,6 +136,7 @@ pub fn error_log(err: String){
     // error.log -> $HOME/.Tiks/error.log -> [time]: [Error]
 }
 
+
 pub const MB:f64 = 1024.0*1024.0;
 
 use std::fs::metadata;

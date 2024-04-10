@@ -132,6 +132,7 @@ impl SessionContext{
                 }
             },
             Err(_) =>{
+                println!("Tiks::welcome-to-try\r\nplease add your account");
                 #[cfg(target_os="linux")]
                 init_setup_linux();
                 #[cfg(target_os="mac")]
@@ -247,9 +248,7 @@ fn init_setup_mac() {
 
 #[cfg(target_os="windows")]
 fn init_setup_windows() {
-    Command::new("cmd")
-        .arg("/C")
-        .arg("./window/setup.bat")
+    Command::new("./window/setup.bat")
         .spawn()
         .expect("Error: Can't setup on Windows");
 }

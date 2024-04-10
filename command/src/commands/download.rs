@@ -16,6 +16,9 @@ pub struct Package{
 }
 
 // apt install 
+
+
+// upload soon
 impl Package{
     pub  fn new(name: String, version: String, download_link: String) -> Package{
         Package{
@@ -58,6 +61,8 @@ async fn download(link: &str, filename: &str) -> Result<(),Box<dyn std::error::E
 
 
 // apt update new
+
+// upload soon
 pub fn update(version: &str) -> std::io::Result<()>{
     let mut version = version;
     let home = dirs::home_dir().unwrap();
