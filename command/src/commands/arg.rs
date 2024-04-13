@@ -70,9 +70,20 @@ pub fn command_match(commands: Commands,session_context: &mut SessionContext) ->
 #[allow(unused_assignments)]
 pub fn execute_command(command: &str, option: &str, arg: &Vec<String>, session_context: &mut SessionContext) -> Result<(usize,String), std::io::Error> {
     match command {
-        "sudo" => {
-            let output = sudo(session_context);
-            output
+        "sudo" => match arg.is_empty(){
+            true => {
+                let output = sudo(session_context);
+                output
+            },
+            false => {
+                let output = sudo(session_context).ok();
+                assert_eq!(output.unwrap().0,0);
+
+                let command = turn_command(arg.to_vec());
+                let res = command_match(command, session_context);
+                session_context.user_state.exit_root();
+                res
+            }
         },
         "exit" => {
             match option{

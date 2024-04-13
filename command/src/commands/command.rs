@@ -571,7 +571,7 @@ pub fn echo_print<T: std::fmt::Display + From<String>>(output: T) -> (usize,T){
 }
 
 // turn vec<_> to Commands
-fn  turn_command(v: Vec<String>) -> Commands{
+pub fn turn_command(v: Vec<String>) -> Commands{
     let ouput = Commands::new(v);
     ouput
 }
