@@ -370,7 +370,7 @@ use tar::Archive;
 use flate2::read::GzDecoder;
 use flate2::Compression;
 use flate2::write::GzEncoder;
-use super::arg::{execute_command, execute_other_command, split, Commands};
+use super::arg::{execute_command, execute_other_command, split, stdout_other, Commands};
 
 
 pub fn zxvf(file: &str, to: &str) -> Result<(usize,String),std::io::Error>{
@@ -398,11 +398,23 @@ pub fn xvf(to: &str) -> Result<(usize,String),std::io::Error>{
 
 
 // 重定向输出   > 
+#[allow(unused_variables)]
+#[allow(unused_assignments)]
 pub fn stdout_file(commands: Commands,session_context: &mut SessionContext) -> Result<(usize,String), std::io::Error>{
-    let command = commands.command.clone();
-    let arg = commands.arg.clone();
-    let result = execute_command(&command, "", &arg, session_context)?.1;
-    let mut file = File::create(arg[arg.len()-1].clone())?;
+    let mut command = commands.command.clone();
+    let mut option = String::new();
+    let mut arg = commands.arg.clone();
+    let mut file = String::new();
+    if command.is_empty(){
+        let (f,new_command) = stdout_other(&arg);
+        file = f;
+        let (command_v,option_v,arg_v) = split(new_command);
+        (command,option,arg) = (command_v,option_v,arg_v);
+    }else{
+        file = arg[arg.len()-1].clone();
+    }
+    let result = execute_command(&command, &option, &arg, session_context)?.1;
+    let mut file = File::create(file)?;
     file.write(result.as_bytes())?;
     Ok((STATUE_CODE,"write over!".to_string()))
 }

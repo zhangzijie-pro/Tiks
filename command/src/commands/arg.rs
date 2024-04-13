@@ -5,7 +5,7 @@ use crate::state_code::{missing_pattern, not_found};
 use super::code::*;
 use super::command::*;
 
-#[derive(Clone)]
+#[derive(Clone,Debug)]
 pub struct Commands{
     pub command: String,
     pub option: String,
@@ -20,6 +20,19 @@ impl Commands {
         let mut option = String::new();
         let mut arg = Vec::new();
     
+        // get > len
+        let parts: Vec<&str> = commands.iter().map(|s| s.as_str()).collect();
+        let redirect_index = parts.iter().position(|&x| x == ">");
+        if let Some(redirect_index) = redirect_index {
+            if redirect_index > 1 {
+                arg = parts.iter().map(|&s| s.to_string()).collect();
+                return Commands {
+                    command: String::new(),
+                    option: ">".to_string(),
+                    arg,
+                };
+            }
+        }
         match commands.as_slice() {
             [cmd] => {
                 command = cmd.clone();
@@ -40,9 +53,9 @@ impl Commands {
                     arg.push(opt.clone());
                 }
                 arg.extend_from_slice(args);
-            }
+            },
             _ => {
-                if commands.iter().any(|x| x == "|" || x == "&" || x == "&&") {
+                if commands.iter().any(|x| x == "|" || x == "&" || x == "&&" || x==">") {
                     arg = commands;
                 }
             }
@@ -217,4 +230,19 @@ pub fn split(commands: Commands) -> (String,String,Vec<String>){
     let option = commands.option.clone();
     let arg = commands.arg.clone();
     (command,option,arg)
+}
+
+// ["cat", "README.md", ">", "a.txt"]
+
+//command: ["cat", "README.md"]
+//file: a.txt
+pub fn stdout_other(arg: &Vec<String>) -> (String,Commands){
+    let mut s = arg.split(|s| s==">");
+    let output = s.next().unwrap().to_vec();
+    let file = &s.next().unwrap()[0];
+
+    
+    let command = turn_command(output);
+
+    (file.to_string(),command)
 }
