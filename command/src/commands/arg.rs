@@ -150,6 +150,7 @@ pub fn execute_command(command: &str, option: &str, arg: &Vec<String>, session_c
 // match has arg's function
 pub fn execute_other_command(command: &str, option: &str, arg: &[String]) -> Result<(usize,String), std::io::Error> {
     match command {
+        "help" => Ok((0,help())),
         "pwd" => pwd(),
         "time" => get_time(),
         "history" => history(),
@@ -232,10 +233,6 @@ pub fn split(commands: Commands) -> (String,String,Vec<String>){
     (command,option,arg)
 }
 
-// ["cat", "README.md", ">", "a.txt"]
-
-//command: ["cat", "README.md"]
-//file: a.txt
 pub fn stdout_other(arg: &Vec<String>) -> (String,Commands){
     let mut s = arg.split(|s| s==">");
     let output = s.next().unwrap().to_vec();

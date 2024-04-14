@@ -23,7 +23,7 @@ pub fn whoami(session_context: &mut SessionContext) -> io::Result<(usize,String)
 pub fn help() -> String{
     let help = format!(
     "Usage: <command> [options] [arg]
-\0\x1B[32mCommands:
+\0\x1B[32m Commands:
     pwd     View current directory                         apt -i ..   Install package
     ls      View all files in the current directory        history     View past Commands
     cd      Change directory                               whoami  ||  apt -update version
@@ -313,7 +313,7 @@ use crate::commands::download::{download_package, find_package};
 use crate::priority::get_priority;
 use crate::set::set::file_create_time;
 use crate::run::run;
-use crate::state_code::{empty_dir, empty_file, missing_pattern, STATUE_CODE};
+use crate::state_code::{empty_dir, empty_file, env, missing_pattern, STATUE_CODE};
 use super::download::update;
 use crate::root::SessionContext;
 
@@ -571,6 +571,30 @@ fn get_env(id: String) -> String{
     }
 }
 
+use std::path::PathBuf;
+fn set_env_command(key: &str, path: &str) -> io::Result<()>{
+    let mut path_set = Vec::new();
+    let s = PathBuf::from(format!("{}",path));
+
+    path_set.push(s);
+
+    let new_path = env::join_paths(path_set).expect("Failed join paths");
+
+    env::set_var(key, new_path);
+    Ok(())
+}
+
+pub fn set(key: &str, path: &str) -> io::Result<(usize,String)>{
+    match set_env_command(key, path){
+        Ok(())=>{
+            return Ok(env());
+        },
+        Err(_) =>{
+            let error_str = format!("Can't set env {}",key);
+            return Ok((108,error_str));
+        }
+    }
+}
 
 pub fn echo_print<T: std::fmt::Display + From<String>>(output: T) -> (usize,T){
     let var = format!("{}", output);

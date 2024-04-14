@@ -33,10 +33,12 @@
 - 支持文件和目录的移动，通过 `mv` 命令进行操作。
 - 提供文件压缩和解压功能，通过 `tar` 命令进行操作。
 - 支持退出当前进程，通过 `exit` 命令进行操作。
+- 支持&用于优先级执行，&&顺序执行,|管道符与 >重定向输出
 
 ## 使用方法
 
 Tiks 提供了类似于常见 Linux 终端的使用方法，下面是一些常用命令的示例：
+详见[命令](./command/src/commands/command.rs)
 
 ```bash
 Usage: <command> [options] [arg]
@@ -58,6 +60,7 @@ Commands:
     tar -zxvf:  解压缩文件
     tar -xvf:   压缩文件
     exit        退出当前进程
+    ......
 ```
 
 # Rust 安装工具
