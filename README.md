@@ -21,7 +21,7 @@
 
 如果想向其中添加其余函数:
 
-- C\C++: [详见添加方法](./command/c_build/README.md)
+- C\C++: [详见添加方法](./command/src/c_build/README.md)
 - rust: [详间rust添加方法](./command/src/commands/README.md)
 
 ## 功能特点

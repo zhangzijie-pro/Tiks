@@ -23,3 +23,15 @@ fn main() {
         // init shell
         init_shell(&mut session_context)
 }
+
+/* C test
+#[link(name="hello")]
+extern "C"{
+        fn hello();
+}
+
+fn main(){     
+        unsafe{
+                hello()
+        }
+}*/
