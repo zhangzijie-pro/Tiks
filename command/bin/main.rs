@@ -24,7 +24,8 @@ fn main() {
         init_shell(&mut session_context)
 }
 
-/* C test
+// C test
+/*
 #[link(name="hello")]
 extern "C"{
         fn hello();
@@ -34,4 +35,5 @@ fn main(){
         unsafe{
                 hello()
         }
-}*/
+}
+*/

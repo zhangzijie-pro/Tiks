@@ -62,6 +62,8 @@ async fn download(link: &str, filename: &str) -> Result<(),Box<dyn std::error::E
 
 // apt update new
 
+const _GITHUB_RELEASE: &str = "https://github.com/zhangzijie-pro/Tiks/releases/download/1.0.0/tiks";
+
 // upload soon
 pub fn update(version: &str) -> std::io::Result<()>{
     let mut version = version;

@@ -1,6 +1,4 @@
 pub const STATUE_CODE:usize=0;
-pub const ERR_CODE:usize=109;
-
 
 pub fn missing_pattern() -> (usize, String) {
     (104, "Error: Missing parameters".to_string())
@@ -32,9 +30,4 @@ pub fn pipe_err() -> (usize,String){
 
 pub fn not_found() -> (usize,String){
     (404,"Error: Not found this command in terimal".to_string())
-}
-
-pub fn normal_success<T: std::fmt::Display + From<String>>(output:T) -> (usize,String){
-    let output = format!("{}",output);
-    (STATUE_CODE,output)
 }
