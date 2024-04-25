@@ -8,7 +8,6 @@ use crate::process::add_task::{add_command_to_thread,add_thread_to_process};
 use crate::root::SessionContext;
 use crate::signal::semaphore_new;
 
-use std::io::{self, Write};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::commands::arg::{command_match, split, Commands};
@@ -95,51 +94,67 @@ pub fn run(args: Vec<String>,session_context: &mut SessionContext){
 }
 
 
-pub fn init_shell(session_context: &mut SessionContext){
-    loop {
-        let mut args: Vec<String> = Vec::new();
-        let mut input = String::new();
-        print_prompt(session_context);
-    
-        if let Err(err) = io::stdin().read_line(&mut input) {
-            eprintln!("Failed to read input: {}", err);
-            continue;
-        }
-    
-        let command = input.trim();
-        history_push(command.to_string());
+use rustyline::Editor;
+use rustyline::error::ReadlineError;
 
-        if command.is_empty() {
-            continue; // Ignore empty commands
-        }else if command.parse::<usize>().is_ok(){
-            let (_i,res) = get_last(command.parse::<usize>().unwrap());
-            match res{
-                Some(command) => {
-                    args.extend(command.split_whitespace().map(|s| s.to_string()));
-                    run(args.clone(),session_context);
-                },
-                None =>{
+pub fn init_shell(session_context: &mut SessionContext){
+    // init an Editor
+    let mut rl = Editor::<()>::new();
+    loop {
+        let readline: Result<String, ReadlineError> = rl.readline(&print_prompt(session_context));
+        match readline {
+            Ok(line) => {
+                if line.trim().is_empty() {
                     continue;
                 }
+                // add Key::UP and Key::DOWN to find history
+                rl.add_history_entry(line.clone());
+                // add line in lazy HISTORY
+                history_push(line.clone());
+                
+                if line.parse::<usize>().is_ok() {
+                    let (_i, res) = get_last(line.parse::<usize>().unwrap());
+                    match res {
+                        Some(command) => {
+                            let args: Vec<String> = command.split_whitespace().map(|s| s.to_string()).collect();
+                            run(args, session_context);
+                        }
+                        None => {
+                            continue;
+                        }
+                    }
+                } else {
+                    let args: Vec<String> = line.split_whitespace().map(|s| s.to_string()).collect();
+                    if args.contains(&"&&".to_string()) {
+                        and(args, session_context)
+                    } else if args.contains(&"|".to_string()) {
+                        let s = pipe(args).unwrap();
+                        println!("{}", s.1);
+                    } else if args.contains(&"&".to_string()) {
+                        priority_run(args, session_context)
+                    } else {
+                        run(args, session_context);
+                    }
+                }
             }
-        }else{
-            args.extend(command.split_whitespace().map(|s| s.to_string()));
-            if args.contains(&"&&".to_string()){
-                and(args.clone(), session_context)
-            }else if args.contains(&"|".to_string()){
-                let s = pipe(args).unwrap();
-                println!("{}",s.1)
-            }else if args.contains(&"&".to_string()){
-                priority_run(args.clone(), session_context)
-            }else{
-                run(args.clone(),session_context);
+            Err(ReadlineError::Interrupted) => {
+                println!("CTRL-C");
+                break;
+            }
+            Err(ReadlineError::Eof) => {
+                println!("CTRL-D");
+                break;
+            }
+            Err(err) => {
+                println!("Error: {:?}", err);
+                break;
             }
         }
     }
 }
 
 // root
-fn print_prompt(session_context: &mut SessionContext) {
+fn print_prompt(session_context: &mut SessionContext) -> String{
     let mut whoami = session_context.get_username();
     if session_context.user_state.root.check_permission(){
         whoami="root".to_string()
@@ -147,5 +162,5 @@ fn print_prompt(session_context: &mut SessionContext) {
     let pwd = pwd().unwrap().1;
     let input = format!("\x1B[32;1m{}\x1B[0m:\x1B[34m{}>>\x1B[0m ",whoami,pwd); // Assuming whoami() returns the current user
     print!("{}",input);
-    io::stdout().flush().unwrap();
+    input
 }

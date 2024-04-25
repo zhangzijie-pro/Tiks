@@ -114,17 +114,19 @@ pub fn execute_command(command: &str, option: &str, arg: &Vec<String>, session_c
             }
             Ok((0,"Exit".to_string()))
         },
+        // error here
         "apt"=>match option{ // arg
             "-i"|"-install"=>match arg.is_empty(){
                 true=>Ok(missing_pattern()),
                 false=>apt(&arg[0])
             }
             "-u"|"-update"=>match arg.is_empty(){
-                true=>Ok(missing_pattern()),
+                true=>Ok(missing_pattern()),  // fix : update to lastest
                 false=>update_new(&arg[0])
             }
             _=>Ok(not_found())
         },
+        //
         "whoami" => whoami(session_context),
         "pd" => match option{  // match arg empty
             "-f"|"-fix" => match arg.is_empty(){

@@ -62,7 +62,8 @@ async fn download(link: &str, filename: &str) -> Result<(),Box<dyn std::error::E
 
 // apt update new
 
-const _GITHUB_RELEASE: &str = "https://github.com/zhangzijie-pro/Tiks/releases/download/1.0.0/tiks";
+const _GITHUB_RELEASE_LINUX: &str = "https://github.com/zhangzijie-pro/Tiks/releases/download/1.0.0/tiks";
+const _GITHUB_RELEASE_WINDOW: &str = "https://github.com/zhangzijie-pro/Tiks/releases/download/1.0.0/tiks.exe";
 
 // upload soon
 pub fn update(version: &str) -> std::io::Result<()>{
@@ -88,4 +89,8 @@ cargo build
     let _ = file.write(u);
 
     Ok(())
+}
+
+fn _update_last(){
+    
 }
