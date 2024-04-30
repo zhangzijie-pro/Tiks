@@ -83,6 +83,7 @@ pub fn command_match(commands: Commands,session_context: &mut SessionContext) ->
 #[allow(unused_assignments)]
 pub fn execute_command(command: &str, option: &str, arg: &Vec<String>, session_context: &mut SessionContext) -> Result<(usize,String), std::io::Error> {
     match command {
+        "version" => Ok((0,"Tiks-version: 1.0.2".to_string())),
         "sudo" => match arg.is_empty(){
             true => {
                 let output = sudo(session_context);
@@ -121,7 +122,7 @@ pub fn execute_command(command: &str, option: &str, arg: &Vec<String>, session_c
                 false=>apt(&arg[0])
             }
             "-u"|"-update"=>match arg.is_empty(){
-                true=>Ok(missing_pattern()),  // fix : update to lastest
+                true=>update_lastest(),
                 false=>update_new(&arg[0])
             }
             _=>Ok(not_found())

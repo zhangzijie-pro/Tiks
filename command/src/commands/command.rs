@@ -1,10 +1,10 @@
 use std::fs::File;
-use std::process::Command;
 use std::sync::{Mutex, RwLock};
 use std::{env, fs};
 use std::io::{self, BufRead, Error, ErrorKind, Read, Write};
 use std::path::Path;
 
+use async_std::task;
 use lazy_static::lazy_static;
 
 
@@ -315,7 +315,7 @@ use crate::priority::get_priority;
 use crate::set::set::file_create_time;
 use crate::run::run;
 use crate::state_code::{empty_dir, empty_file, env, missing_pattern, STATUE_CODE};
-use super::download::update;
+use super::download::{update, update_last};
 use crate::root::SessionContext;
 
 
@@ -347,14 +347,6 @@ pub fn update_new(version: &str) -> io::Result<(usize,String)>{
     }
     match update(&version) {
         Ok(_) => {
-            let script_path = dirs::home_dir().unwrap().join(".Tiks").join("update_script.sh");
-            let output = Command::new("bash")
-                .arg(script_path.clone())
-                .output()
-                .expect("Error: network error....");
-            if output.status.success() {
-                let _ = std::fs::remove_file(script_path);
-            }
             let res = format!("Successfully Update version {}",version);
             Ok((STATUE_CODE,res))
         }
@@ -366,6 +358,15 @@ pub fn update_new(version: &str) -> io::Result<(usize,String)>{
 
 }
 
+// update lastest
+#[allow(unused_must_use)]
+pub fn update_lastest() -> Result<(usize,String),std::io::Error>{
+    task::block_on(async {
+        update_last().await;
+    });
+    
+    return Ok((STATUE_CODE,"update over!".to_string()));
+}
 
 use tar::Archive;
 use flate2::read::GzDecoder;

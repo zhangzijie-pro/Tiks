@@ -6,12 +6,14 @@
 // There is some error or other suggestions contact me : zzj01262022@163.com
 // Cargo run
 
+
 use command::env::init_env;
 use command::run::init_shell;
 use command::start_logo::start_logo;
 use command::root::new_session;
 
-fn main() {
+#[tokio::main]
+async fn main() {
         start_logo();
         
         // new user
