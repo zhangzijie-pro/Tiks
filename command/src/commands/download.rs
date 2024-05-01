@@ -74,16 +74,18 @@ pub fn update(version: &str) -> std::io::Result<()>{
     let _release_linux = format!("https://github.com/zhangzijie-pro/Tiks/releases/download/{}/tiks",version);
     let _release_window = format!("https://github.com/zhangzijie-pro/Tiks/releases/download/{}/tiks.exe",version);
 
-    #[cfg(target_os="linux")]
-    let app_linux = _get_linux_dir();
-    task::block_on(async {
-        update_to(&_release_linux, app_linux);
-    });
-    #[cfg(target_os="windows")]{
-    let app_window = _get_window_dir();
-    task::block_on(async {
-        update_to(&_release_window, app_window);
-    });
+    if cfg!(target_os = "linux") | cfg!(target_os="mac"){
+        let app_linux = get_linux_dir();
+        task::block_on(async {
+            update_to(&_release_linux, app_linux).await;
+        });
+    }
+
+    if cfg!(target_os="windows"){
+        let app_window = get_window_dir();
+        task::block_on(async {
+            update_to(&_release_window, app_window).await;
+        });
     }
     
     Ok(())
@@ -93,19 +95,24 @@ pub fn update(version: &str) -> std::io::Result<()>{
 pub async fn update_last() -> Result<(), Box<dyn std::error::Error>>{
     let client = Client::new();
 
-    #[cfg(target_os="linux")]
-    let response = client.get(_GITHUB_RELEASE_LINUX).send().await.expect("Error: update error");
-    let app = _get_linux_dir();
-    let mut file = File::create(app).expect("Can't create file : tiks");
-    
-    #[cfg(target_os="windows")]{
-    let response = client.get(_GITHUB_RELEASE_WINDOW).send().await.expect("Error: update error");
-    let app = _get_window_dir();
-    let mut file = File::create(app).expect("Can't create file : tiks");
+    if cfg!(target_os = "linux") | cfg!(target_os="mac"){
+        let response = client.get(_GITHUB_RELEASE_LINUX).send().await.expect("Error: update error");
+        let app = get_linux_dir();
+        let mut file = File::create(app).expect("Can't create file : tiks");
+
+        let byte = response.bytes().await.unwrap();
+        let _ = file.write_all(&byte);
     }
 
-    let byte = response.bytes().await.unwrap();
-    let _ = file.write_all(&byte);
+    if cfg!(target_os="windows"){ 
+        let response = client.get(_GITHUB_RELEASE_WINDOW).send().await.expect("Error: update error");
+        let app = get_window_dir();
+        let mut file = File::create(app).expect("Can't create file : tiks");
+
+        let byte = response.bytes().await.unwrap();
+        let _ = file.write_all(&byte);
+    }
+
     Ok(())
 }
 
@@ -123,7 +130,7 @@ async fn update_to(url: &str,filename: PathBuf) -> Result<(), Box<dyn std::error
 }
 
 
-fn _get_window_dir() -> PathBuf{
+fn get_window_dir() -> PathBuf{
     let home = dirs::home_dir().unwrap();
     let app_dir = home.join(".Tiks");
     let app_window = app_dir.join("bin").join("tiks.exe");
@@ -131,7 +138,7 @@ fn _get_window_dir() -> PathBuf{
     app_window
 }
 
-fn _get_linux_dir() -> PathBuf{
+fn get_linux_dir() -> PathBuf{
     let home = dirs::home_dir().unwrap();
     let app_dir = home.join(".Tiks");
     let app_linux = app_dir.join("bin").join("tiks");

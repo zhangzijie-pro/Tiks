@@ -342,9 +342,7 @@ pub fn apt(name: &str) -> io::Result<(usize,String)>{
 
 // apt -update xxx
 pub fn update_new(version: &str) -> io::Result<(usize,String)>{
-    if version.is_empty(){
-        return Ok(missing_pattern());
-    }
+    
     match update(&version) {
         Ok(_) => {
             let res = format!("Successfully Update version {}",version);
@@ -365,7 +363,7 @@ pub fn update_lastest() -> Result<(usize,String),std::io::Error>{
         update_last().await;
     });
     
-    return Ok((STATUE_CODE,"update over!".to_string()));
+    return Ok((STATUE_CODE,"Successfully Update lastest version!".to_string()));
 }
 
 use tar::Archive;
