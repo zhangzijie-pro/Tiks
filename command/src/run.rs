@@ -124,17 +124,18 @@ pub fn init_shell(session_context: &mut SessionContext){
                         }
                     }
                 } else {
-                    let args: Vec<String> = line.split_whitespace().map(|s| s.to_string()).collect();
+                    let args: Box<Vec<String>> = Box::new(line.split_whitespace().map(|s| s.to_string()).collect());
                     if args.contains(&"&&".to_string()) {
-                        and(args, session_context)
+                        and(*args, session_context)
                     } else if args.contains(&"|".to_string()) {
-                        let s = pipe(args).unwrap();
+                        let s = pipe(*args).unwrap();
                         println!("{}", s.1);
                     } else if args.contains(&"&".to_string()) {
-                        priority_run(args, session_context)
+                        priority_run(*args, session_context)
                     } else {
-                        run(args, session_context);
+                        run(*args, session_context);
                     }
+                    
                 }
             }
             Err(ReadlineError::Interrupted) => {

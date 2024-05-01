@@ -79,7 +79,7 @@ pub fn command_match(commands: Commands,session_context: &mut SessionContext) ->
     }
 }
 
-
+// root function
 #[allow(unused_assignments)]
 pub fn execute_command(command: &str, option: &str, arg: &Vec<String>, session_context: &mut SessionContext) -> Result<(usize,String), std::io::Error> {
     match command {
@@ -150,13 +150,18 @@ pub fn execute_command(command: &str, option: &str, arg: &Vec<String>, session_c
 }
 
 
-// match has arg's function
+// normal function
 pub fn execute_other_command(command: &str, option: &str, arg: &[String]) -> Result<(usize,String), std::io::Error> {
     match command {
         "help" => Ok((0,help())),
         "pwd" => pwd(),
         "time" => get_time(),
         "history" => history(),
+        // test C define here
+        "hello_c" => {
+            test_c();
+            Ok((0,"test C ok...!".to_string()))
+        },
         "ls" | "l" => ls(),
         "grep" => match arg.is_empty(){
             true=>Ok(missing_pattern()),

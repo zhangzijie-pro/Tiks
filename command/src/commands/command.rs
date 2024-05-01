@@ -612,6 +612,18 @@ pub fn turn_command(v: Vec<String>) -> Commands{
     ouput
 }
 
+
+// C test
+#[link(name="hello")]
+extern "C"{
+        fn hello();
+}
+
+pub fn test_c(){
+    unsafe{
+        hello()
+    }
+}
 /*
     fn vim(){
         

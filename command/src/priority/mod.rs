@@ -27,7 +27,7 @@ impl Ord for CommandPriority {
 // Set command priority
 pub fn get_priority(command: &str) -> CommandPriority{
     match command{
-        "pwd"|"ls"|"mkdir"|"touch"|"whoami"|"exit" => CommandPriority::Low,
+        "pwd"|"ls"|"mkdir"|"touch"|"whoami"|"exit"|"echo"|"print" => CommandPriority::Low,
         "cd"|"rm"|"cat"|"python"|"html"|"web"|"rn"|"mv"|"tar"|"grep"|"pd"|"root"|"apt"|"history" => CommandPriority::Medium,
         "sleep"|"kill"|"ps"=> CommandPriority::High,
         _ => CommandPriority::Unknow

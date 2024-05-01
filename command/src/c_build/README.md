@@ -8,6 +8,8 @@
 
 完成后，可在command.rs中声明方法，并在arg.rs中进行配置
 详见:[rust添加方法](../commands/README.md)
+[代码示例<command.rs>](../commands/command.rs)
+[代码示例<arg.rs>](../commands/arg.rs)
 
 ```rust
     
