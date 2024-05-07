@@ -12,8 +12,7 @@ use command::run::init_shell;
 use command::start_logo::start_logo;
 use command::root::new_session;
 
-#[tokio::main]
-async fn main() {
+fn main() {
         start_logo();
         
         // new user

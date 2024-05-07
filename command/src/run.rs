@@ -162,6 +162,5 @@ fn print_prompt(session_context: &mut SessionContext) -> String{
     }
     let pwd = pwd().unwrap().1;
     let input = format!("\x1B[32;1m{}\x1B[0m:\x1B[34m{}>>\x1B[0m ",whoami,pwd); // Assuming whoami() returns the current user
-    print!("{}",input);
     input
 }
