@@ -310,12 +310,12 @@ pub fn cat(file: &str) -> Result<(usize,String),Error>{
 }
 
 
-use crate::commands::download::{download_package, find_package};
+use crate::commands::apt::{download_package, find_package};
 use crate::priority::get_priority;
 use crate::set::set::file_create_time;
 use crate::run::run;
 use crate::state_code::{empty_dir, empty_file, env, missing_pattern, STATUE_CODE};
-use super::download::{update, update_last};
+use super::apt::{update, update_last};
 use crate::root::SessionContext;
 
 
@@ -600,9 +600,9 @@ pub fn echo_print<T: std::fmt::Display + From<String>>(output: T) -> (usize,T){
     let var = format!("{}", output);
     if var.contains("$") {
         let val = get_env(var);
-        return (0, val.into());
+        return (STATUE_CODE, val.into());
     }else{
-        (0, output)
+        (STATUE_CODE, output)
     }
 }
 
@@ -624,8 +624,3 @@ pub fn test_c(){
         hello()
     }
 }
-/*
-    fn vim(){
-        
-    }
-*/

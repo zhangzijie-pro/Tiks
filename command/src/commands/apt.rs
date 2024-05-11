@@ -64,8 +64,8 @@ async fn download(link: &str, filename: &str) -> Result<(),Box<dyn std::error::E
 
 // apt update new
 
-const _GITHUB_RELEASE_LINUX: &str = "https://github.com/zhangzijie-pro/Tiks/releases/download/1.0.1/tiks";
-const _GITHUB_RELEASE_WINDOW: &str = "https://github.com/zhangzijie-pro/Tiks/releases/download/1.0.1/tiks.exe";
+const _GITHUB_RELEASE_LINUX: &str = "https://github.com/zhangzijie-pro/Tiks/releases/download/1.0.3/tiks";
+const _GITHUB_RELEASE_WINDOW: &str = "https://github.com/zhangzijie-pro/Tiks/releases/download/1.0.3/tiks.exe";
 
 // upload soon
 #[allow(unused_must_use)]

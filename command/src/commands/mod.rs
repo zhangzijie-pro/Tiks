@@ -1,4 +1,4 @@
 pub mod arg;
 mod code;
-pub mod download;
+pub mod apt;
 pub mod command;

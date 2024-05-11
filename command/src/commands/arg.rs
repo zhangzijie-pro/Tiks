@@ -1,5 +1,6 @@
 use crate::set::set::get_similar;
 use crate::root::{decryption, SessionContext};
+use crate::set::version;
 use crate::state_code::{missing_pattern, not_found};
 
 use super::code::*;
@@ -83,7 +84,17 @@ pub fn command_match(commands: Commands,session_context: &mut SessionContext) ->
 #[allow(unused_assignments)]
 pub fn execute_command(command: &str, option: &str, arg: &Vec<String>, session_context: &mut SessionContext) -> Result<(usize,String), std::io::Error> {
     match command {
-        "version" => Ok((0,"Tiks-version: 1.0.2".to_string())),
+        "version" => match option{
+            "-n"|"now" => {
+                version::get_version_now()
+            },
+            "-l"|"-list" => {
+                version::get_version_list()
+            },
+            _ =>{
+                Ok((0,"help:\n  -n|now: Get version now\n  -l|list: Get all version".to_string()))
+            }
+        },
         "sudo" => match arg.is_empty(){
             true => {
                 let output = sudo(session_context);
