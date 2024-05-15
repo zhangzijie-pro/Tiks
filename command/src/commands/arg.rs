@@ -136,7 +136,7 @@ pub fn execute_command(command: &str, option: &str, arg: &Vec<String>, session_c
                 true=>update_lastest(),
                 false=>update_new(&arg[0])
             }
-            _=>Ok(not_found())
+            _=>Ok((0,"help:\n  -i|-install: install package \n  -u|-update: update this version".to_string()))
         },
         //
         "whoami" => whoami(session_context),
@@ -150,7 +150,7 @@ pub fn execute_command(command: &str, option: &str, arg: &Vec<String>, session_c
                 let password = decryption(pd);
                 (0,password)
             }),
-            _=>Ok(not_found()),
+            _=>Ok((0,"help:\n  -f|-fix: fix your password \n  -c|-check: show your password".to_string())),
         },
         "ll" => {
             let va = ll(&session_context).unwrap();

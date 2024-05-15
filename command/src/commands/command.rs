@@ -33,7 +33,7 @@ pub fn help() -> String{
     python  Run code in python                             tar -zxvf:  Compression  
     html    Open html file                                 tar -xvf:   Decompression
     pd      Check your password                            sudo        Root
-    exit    Exit this process\0\x1B[0m\n"
+    version Get your tiks version                          exit    Exit this process\0\x1B[0m\n"
     );
 
     help
