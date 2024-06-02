@@ -1,5 +1,9 @@
+use std::collections::HashMap;
+
 use crate::process::thread::ThreadControlBlock;
 use crate::signal::Semaphore;
+
+use super::RUNNING_P;
 
 #[derive(Debug,Clone)]
 pub struct Process {
@@ -70,22 +74,23 @@ impl ProcessManager {
         }
     }
 
-    pub fn ps(&self) {
-        for process in &self.processes {
-            println!("PID: {}, Name: {}, State: {:?}", process.pid, process.name, process.status());
-        }
-    }
-
-    pub fn kill(&mut self, pid: usize) {
+    pub fn kill(&mut self, pid: usize) -> String {
         if let Some(process) = self.processes.iter_mut().find(|p| p.pid == pid) {
             process.stop();
-        } else {
-            println!("Process with PID {} not found", pid);
         }
+        let mut s = RUNNING_P.lock().unwrap();
+        if let Some(n) = s.iter_mut().find(|s| s.contains_key(&pid)){
+            n.clear()
+        }
+
+        String::new()
     }
 
     pub fn add_process(&mut self, process: Process) {
-        self.processes.push(process);
+        self.processes.push(process.clone());
+        let mut hash = HashMap::new();
+        hash.insert(process.pid, (process.name,process.state));
+        RUNNING_P.lock().unwrap().push(hash);
     }
 
     pub fn start_process(&mut self,pid: usize){

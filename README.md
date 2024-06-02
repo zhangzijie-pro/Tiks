@@ -3,27 +3,6 @@
 欢迎使用 Tiks，一个简易的 Linux 终端命令行工具，类似于常见的 Linux 终端环境，提供了一系列常用的命令和功能。
 #### 供参考，若有错误改进地方可push到main
 
-## 环境变量
-
-如果想将其加入环境变量：
-
-```bash
-    Cargo build --release
-    cp | copy  ./target/release/tiks  $HOME/.Tiks/bin
-    或者下载 tiks / tiks.exe
-    添加至.Tiks目录下的bin中
-```
-
-- Windows:     执行./window/setup.bat    ->  setx PATH "%PATH%;%TIKS_DIR%\bin"
-- mac & Linux: 执行./mac_linux/setup.sh  ->  PATH=$PATH:/$HOME/.Tiks/bin   
-
-## 添加方法函数
-
-如果想向其中添加其余函数:
-
-- C\C++: [详见添加方法](./command/src/c_build/README.md)
-- rust: [详间rust添加方法](./command/src/commands/README.md)
-
 ## 功能特点
 
 - 提供常用的 Linux 命令，如 `pwd`, `ls`, `cd`, `rm`, `touch`, `cat`, `python` 等。
@@ -70,6 +49,17 @@ Commands:
 点击下面的链接即可前往 Rust 官方网站下载页面：
 
 [点击此处下载 Rust 工具链](https://www.rust-lang.org/tools/install)
+
+## 添加方法函数
+
+如果想向其中添加其余函数:
+
+- C\C++: [详见添加方法](./command/src/c_build/README.md)
+- rust: [详间rust添加方法](./command/src/commands/README.md)
+
+## 环境变量
+[点击此查看](./command/src/env/README.md)
+
 
 ## 贡献
 

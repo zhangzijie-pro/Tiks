@@ -314,7 +314,7 @@ use crate::commands::apt::{download_package, find_package};
 use crate::priority::get_priority;
 use crate::set::set::file_create_time;
 use crate::run::run;
-use crate::state_code::{empty_dir, empty_file, env, missing_pattern, STATUE_CODE};
+use crate::start::state_code::{empty_dir, empty_file, env, missing_pattern, STATUE_CODE};
 use super::apt::{update, update_last};
 use crate::root::SessionContext;
 
@@ -538,16 +538,20 @@ pub fn pipe(command:Vec<String>) -> io::Result<(usize,String)>{
 }
 
 // &&
-pub fn and(command:Vec<String>,session_context: &mut SessionContext){
+pub fn and(command:Vec<String>,session_context: &mut SessionContext) -> Vec<String>{
+    let mut output:Vec<_> = Vec::new();
     let commands = command.split(|x| x=="&&");
     for c in commands{
         let v = c.to_vec();
-        run(v, session_context)
+        let r = run(v, session_context);
+        output.push(r)
     }
+    output
 }
 
 // &
-pub fn priority_run(command:Vec<String>,session_context: &mut SessionContext){
+pub fn priority_run(command:Vec<String>,session_context: &mut SessionContext) -> Vec<String>{
+    let mut output:Vec<_> = Vec::new();
     let commands = command.split(|x| x=="&");
     let mut save_command = Vec::new();
     for c in commands{
@@ -558,8 +562,10 @@ pub fn priority_run(command:Vec<String>,session_context: &mut SessionContext){
     save_command.sort_by_key(|c| -(get_priority(&c[0]).as_number() as i32));
 
     for c in save_command{
-        run(c, session_context)
+        let r = run(c, session_context);
+        output.push(r)
     }
+    output
 }
 
 fn get_env(id: String) -> String{

@@ -1,19 +1,18 @@
 use crate::commands::command::*;
 use crate::priority::{get_priority, CommandPriority};
 use crate::set::set::{error_log, get_last};
-use crate::process::process::ProcessManager;
-use crate::process::sleep;
+use crate::process::process::{ProcessManager, ProcessState};
+use crate::process::{ps, sleep, RUNNING_P};
 use crate::process::thread::ThreadControlBlock;
 use crate::process::add_task::{add_command_to_thread,add_thread_to_process};
 use crate::root::SessionContext;
 use crate::signal::semaphore_new;
-
+use crate::commands::arg::{command_match, split, Commands};
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use crate::commands::arg::{command_match, split, Commands};
-
-static NEXT_TID: AtomicUsize = AtomicUsize::new(1);
-static NEXT_PID: AtomicUsize = AtomicUsize::new(1);
+static NEXT_TID: AtomicUsize = AtomicUsize::new(200);
+static NEXT_PID: AtomicUsize = AtomicUsize::new(200);
 
 
 pub fn handle_command(args: Vec<String>) -> (Commands,usize,usize,CommandPriority) {
@@ -29,7 +28,7 @@ pub fn handle_command(args: Vec<String>) -> (Commands,usize,usize,CommandPriorit
 }
 
 
-pub fn run(args: Vec<String>,session_context: &mut SessionContext){
+pub fn run(args: Vec<String>,session_context: &mut SessionContext) -> String{
     let (commands,pid,tid,priority) = handle_command(args);
     let semaphore = semaphore_new();
     let mut tcb = ThreadControlBlock::new();
@@ -47,12 +46,21 @@ pub fn run(args: Vec<String>,session_context: &mut SessionContext){
 
     
     match command.as_str(){
-        "ps" => pcb.ps(),
-        "kill" => match arg.is_empty(){
-            true => {},
-            _flase => pcb.kill(arg[0].parse::<usize>().unwrap())
+        "ps" => {
+            pcb.kill(pid);
+            tcb.stop_thread(priority_tid);
+            ps()
+        }
+        "kill" => {
+            tcb.stop_thread(priority_tid);
+            pcb.kill(pid);
+            pcb.kill(arg[0].parse::<usize>().unwrap())
         },
-        "sleep" => sleep(&mut tcb, commands.arg[0].parse::<usize>().unwrap()),
+        "sleep" => {
+            pcb.kill(pid);
+            tcb.stop_thread(priority_tid);
+            sleep(&mut tcb, commands.arg[0].parse::<usize>().unwrap())
+        }
         _ =>{
             // start process and thread
             if session_context.user_state.root.check_permission(){
@@ -62,14 +70,15 @@ pub fn run(args: Vec<String>,session_context: &mut SessionContext){
                     let status = res.0.clone();
                     let result = res.1.clone();
                     if status==0{
-                        println!("[{}] Done\n{}",tid,result);
+                        //println!("[{}] Done\n{}",tid,result);
                         pcb.kill(pid);
                         tcb.stop_thread(priority_tid);
+                        result
                     }else{
                         error_log(res.1.clone());
-                        println!("{}",res.1);
+                        res.1
                     }
-                }
+                }else{String::new()}
             } else if !session_context.user_state.root.check_permission() && !session_context.root.allowed_commands.contains(&commands.command) {
                 // Execute normal commands
                 // Handle commands normally when user is not in root mode
@@ -77,16 +86,21 @@ pub fn run(args: Vec<String>,session_context: &mut SessionContext){
                     let status = res.0.clone();
                     let result = res.1.clone();
                     if status==0{
-                        println!("[{}] Done\n{}",tid,result);
+                        //println!("[{}] Done\n{}",tid,result);
                         pcb.kill(pid);
                         tcb.stop_thread(priority_tid);
+                        result
                     }else{
                         error_log(res.1.clone());
-                        println!("{}",res.1);
+                        //println!("{}",res.1);
+                        result
                     }
+                }else {
+                    String::new()
                 }
             }else{
-                eprintln!("Permission not support")
+                eprintln!("Permission not support");
+                String::new()
             }
         }
     }
@@ -97,9 +111,15 @@ pub fn run(args: Vec<String>,session_context: &mut SessionContext){
 use rustyline::Editor;
 use rustyline::error::ReadlineError;
 
+// Can't add tid in output
 pub fn init_shell(session_context: &mut SessionContext){
     // init an Editor
     let mut rl = Editor::<()>::new();
+    let mut hash = HashMap::new();
+    hash.insert(208, ("bash".to_owned(),ProcessState::Running));
+    hash.insert(210, ("cmd".to_owned(),ProcessState::Running));
+
+    RUNNING_P.lock().unwrap().push(hash);
     loop {
         let readline: Result<String, ReadlineError> = rl.readline(&print_prompt(session_context));
         match readline {
@@ -126,14 +146,21 @@ pub fn init_shell(session_context: &mut SessionContext){
                 } else {
                     let args: Box<Vec<String>> = Box::new(line.split_whitespace().map(|s| s.to_string()).collect());
                     if args.contains(&"&&".to_string()) {
-                        and(*args, session_context)
+                        let res = and(*args, session_context);
+                        for r in res{
+                            println!("Done[1]: {r}")
+                        }
                     } else if args.contains(&"|".to_string()) {
                         let s = pipe(*args).unwrap();
                         println!("{}", s.1);
                     } else if args.contains(&"&".to_string()) {
-                        priority_run(*args, session_context)
+                        let res = priority_run(*args, session_context);
+                        for r in res{
+                            println!("Done[1]: {r}")
+                        }
                     } else {
-                        run(*args, session_context);
+                        let res = run(*args, session_context);
+                        println!("{res}")
                     }
                     
                 }

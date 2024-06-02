@@ -2,7 +2,7 @@
 fn set_env() -> (usize,String){
     use std::{env, path::PathBuf};
 
-    use crate::state_code::env;
+    use crate::start::state_code::env;
 
     let mut path = match env::var_os("PATH"){
         Some(val) => env::split_paths(&val).collect::<Vec<_>>(),
@@ -30,7 +30,7 @@ fn set_env() -> (usize,String){
     use std::env;
     use std::path::PathBuf;
 
-    use crate::state_code::env;
+    use crate::start::state_code::env;
 
     let path = env::var_os("PATH").unwrap_or_default();
     let mut paths = env::split_paths(&path).collect::<Vec<_>>();

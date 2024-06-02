@@ -1,7 +1,7 @@
 use crate::set::set::get_similar;
 use crate::root::{decryption, SessionContext};
 use crate::set::version;
-use crate::state_code::{missing_pattern, not_found};
+use crate::start::state_code::{missing_pattern, not_found};
 
 use super::code::*;
 use super::command::*;
@@ -67,6 +67,13 @@ impl Commands {
             option,
             arg,
         }
+    }
+
+    pub fn from_string<T: Into<String>>(arg: T) -> Commands {
+        let arg_string = arg.into();
+        let commands: Vec<&str> = arg_string.split_whitespace().collect();
+        let commands_string: Vec<String> = commands.iter().map(|x| x.to_string()).collect();
+        Commands::new(commands_string)
     }
     
 }

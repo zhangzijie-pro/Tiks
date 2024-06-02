@@ -4,7 +4,7 @@ pub mod set;
 pub mod version{
     use std::io::{self, Read};
 
-    use crate::state_code::STATUE_CODE;
+    use crate::start::state_code::STATUE_CODE;
 
     pub fn get_version_list() -> io::Result<(usize,String)>{
         let mut s = String::new();

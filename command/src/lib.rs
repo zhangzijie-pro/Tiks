@@ -1,11 +1,10 @@
-pub mod start_logo;
 pub mod root;
 pub mod commands;
 mod set;
 pub mod process;
-pub mod state_code;
 pub mod run;
 pub mod signal;
 mod priority;
 pub mod env;
 mod test;
+pub mod start;

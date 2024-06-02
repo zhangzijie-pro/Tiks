@@ -135,7 +135,7 @@ impl SessionContext{
                 println!("Tiks::welcome-to-try\r\nplease add your account");
                 #[cfg(target_os="linux")]
                 init_setup_linux();
-                #[cfg(target_os="mac")]
+                #[cfg(target_os="macos")]
                 init_setup_mac();
                 #[cfg(target_os="windows")]
                 init_setup_windows();
@@ -197,10 +197,12 @@ fn get_password() -> String{
 }
 
 use std::str;
+use std::sync::Mutex;
 #[allow(deprecated)]
 use base64::{encode, decode};
+use lazy_static::lazy_static;
 
-use crate::state_code::STATUE_CODE;
+use crate::start::state_code::STATUE_CODE;
 // base64
 // 加密
 #[allow(deprecated)]
@@ -225,8 +227,8 @@ pub fn decryption(pd: String) -> String{
     }
 }
 
-pub fn new_session() -> SessionContext{
-    SessionContext::new()
+lazy_static!{
+    pub static ref SESSION: Mutex<SessionContext> = Mutex::new(SessionContext::new());
 }
 
 // for every os
@@ -238,7 +240,7 @@ fn init_setup_linux(){
     .expect("Error: Can't setup");
 }
 
-#[cfg(target_os="mac")]
+#[cfg(target_os="macos")]
 fn init_setup_mac() {
     Command::new("bash")
         .arg("./mac_linux/setup.sh")

@@ -74,7 +74,7 @@ pub fn update(version: &str) -> std::io::Result<()>{
     let _release_linux = format!("https://github.com/zhangzijie-pro/Tiks/releases/download/{}/tiks",version);
     let _release_window = format!("https://github.com/zhangzijie-pro/Tiks/releases/download/{}/tiks.exe",version);
 
-    if cfg!(target_os = "linux") | cfg!(target_os="mac"){
+    if cfg!(target_os = "linux") | cfg!(target_os="macos"){
         let app_linux = get_linux_dir();
         task::block_on(async {
             update_to(&_release_linux, app_linux).await;
@@ -95,7 +95,7 @@ pub fn update(version: &str) -> std::io::Result<()>{
 pub async fn update_last() -> Result<(), Box<dyn std::error::Error>>{
     let client = Client::new();
 
-    if cfg!(target_os = "linux") | cfg!(target_os="mac"){
+    if cfg!(target_os = "linux") | cfg!(target_os="macos"){
         let response = client.get(_GITHUB_RELEASE_LINUX).send().await.expect("Error: update error");
         let app = get_linux_dir();
         let mut file = File::create(app).expect("Can't create file : tiks");
