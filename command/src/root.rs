@@ -1,5 +1,4 @@
 // build root
-
 pub struct UserState{
     pub root: UserRole
 }

@@ -323,7 +323,7 @@ dependencies = [
 
 [[package]]
 name = "command"
-version = "1.0.3"
+version = "1.0.4"
 dependencies = [
  "async-std",
  "async-trait",

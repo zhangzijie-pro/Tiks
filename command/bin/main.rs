@@ -6,7 +6,6 @@
 // There is some error or other suggestions contact me : zzj01262022@163.com
 // Cargo run
 
-
 use command::env::init_env;
 use command::run::init_shell;
 use command::start::start_logo::start_logo;

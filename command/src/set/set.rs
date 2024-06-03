@@ -105,7 +105,7 @@ fn get_home_err() -> String{
 }
 
 pub fn error_log(err: String){
-    let time = get_time().unwrap().1;
+    let time = get_time().1;
     let home_path = get_home_err();
     let path = Path::new(&home_path);
 
@@ -134,4 +134,9 @@ pub fn error_log(err: String){
         return;
     }
     // error.log -> $HOME/.Tiks/error.log -> [time]: [Error]
+}
+
+pub fn home_dir() -> String{
+    let binding= dirs::home_dir().unwrap();
+    binding.as_os_str().to_str().map(|x| x.to_string()).unwrap()
 }

@@ -465,11 +465,11 @@ pub fn sudo(session_context: &mut SessionContext)->io::Result<(usize,String)>{
 
 
 // get time
-pub fn get_time() -> io::Result<(usize,String)>{
+pub fn get_time() -> (usize,String){
     let now = chrono::Local::now();
     let time = now.format("%Y-%m-%d %H:%M:%S").to_string();
 
-    Ok((STATUE_CODE,time))
+    (STATUE_CODE,time)
 }
 
 // grep
@@ -538,7 +538,7 @@ pub fn pipe(command:Vec<String>) -> io::Result<(usize,String)>{
 }
 
 // &&
-pub fn and(command:Vec<String>,session_context: &mut SessionContext) -> Vec<String>{
+pub fn and(command:Vec<String>,session_context: &mut SessionContext) -> Vec<(usize,String)>{
     let mut output:Vec<_> = Vec::new();
     let commands = command.split(|x| x=="&&");
     for c in commands{
@@ -550,7 +550,7 @@ pub fn and(command:Vec<String>,session_context: &mut SessionContext) -> Vec<Stri
 }
 
 // &
-pub fn priority_run(command:Vec<String>,session_context: &mut SessionContext) -> Vec<String>{
+pub fn priority_run(command:Vec<String>,session_context: &mut SessionContext) -> Vec<(usize,String)>{
     let mut output:Vec<_> = Vec::new();
     let commands = command.split(|x| x=="&");
     let mut save_command = Vec::new();

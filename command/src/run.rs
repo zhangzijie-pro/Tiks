@@ -28,8 +28,10 @@ pub fn handle_command(args: Vec<String>) -> (Commands,usize,usize,CommandPriorit
 }
 
 
-pub fn run(args: Vec<String>,session_context: &mut SessionContext) -> String{
-    let (commands,pid,tid,priority) = handle_command(args);
+pub fn run<T>(input: T,session_context: &mut SessionContext) -> (usize,String)
+where Vec<String>: From<T>
+{
+    let (commands,pid,tid,priority) = handle_command(input.into());
     let semaphore = semaphore_new();
     let mut tcb = ThreadControlBlock::new();
     let mut pcb = ProcessManager::new();
@@ -49,17 +51,17 @@ pub fn run(args: Vec<String>,session_context: &mut SessionContext) -> String{
         "ps" => {
             pcb.kill(pid);
             tcb.stop_thread(priority_tid);
-            ps()
+            (tid,ps())
         }
         "kill" => {
             tcb.stop_thread(priority_tid);
             pcb.kill(pid);
-            pcb.kill(arg[0].parse::<usize>().unwrap())
+            (tid,pcb.kill(arg[0].parse::<usize>().unwrap()))
         },
         "sleep" => {
             pcb.kill(pid);
             tcb.stop_thread(priority_tid);
-            sleep(&mut tcb, commands.arg[0].parse::<usize>().unwrap())
+            (tid,sleep(&mut tcb, commands.arg[0].parse::<usize>().unwrap()))
         }
         _ =>{
             // start process and thread
@@ -70,15 +72,14 @@ pub fn run(args: Vec<String>,session_context: &mut SessionContext) -> String{
                     let status = res.0.clone();
                     let result = res.1.clone();
                     if status==0{
-                        //println!("[{}] Done\n{}",tid,result);
                         pcb.kill(pid);
                         tcb.stop_thread(priority_tid);
-                        result
+                        (tid,result)
                     }else{
-                        error_log(res.1.clone());
-                        res.1
+                        error_log(res.1.clone());  
+                        (tid,result)
                     }
-                }else{String::new()}
+                }else{(tid,String::from("Error: Not found"))}
             } else if !session_context.user_state.root.check_permission() && !session_context.root.allowed_commands.contains(&commands.command) {
                 // Execute normal commands
                 // Handle commands normally when user is not in root mode
@@ -86,25 +87,21 @@ pub fn run(args: Vec<String>,session_context: &mut SessionContext) -> String{
                     let status = res.0.clone();
                     let result = res.1.clone();
                     if status==0{
-                        //println!("[{}] Done\n{}",tid,result);
                         pcb.kill(pid);
                         tcb.stop_thread(priority_tid);
-                        result
+                        (tid,result)
                     }else{
                         error_log(res.1.clone());
-                        //println!("{}",res.1);
-                        result
+                        (tid,result)
                     }
                 }else {
-                    String::new()
+                    (tid,String::from("Error: Not found"))
                 }
             }else{
-                eprintln!("Permission not support");
-                String::new()
+                (tid,String::from("Error: Permission not support"))
             }
         }
     }
-    
 }
 
 
@@ -147,20 +144,21 @@ pub fn init_shell(session_context: &mut SessionContext){
                     let args: Box<Vec<String>> = Box::new(line.split_whitespace().map(|s| s.to_string()).collect());
                     if args.contains(&"&&".to_string()) {
                         let res = and(*args, session_context);
-                        for r in res{
-                            println!("Done[1]: {r}")
+                        for (t,r) in res{
+                            println!("Done[{t}]: \n{r}")
                         }
                     } else if args.contains(&"|".to_string()) {
-                        let s = pipe(*args).unwrap();
-                        println!("{}", s.1);
+                        let res = pipe(*args).unwrap();
+                        println!("{}",res.1)
                     } else if args.contains(&"&".to_string()) {
                         let res = priority_run(*args, session_context);
-                        for r in res{
-                            println!("Done[1]: {r}")
+                        for (t,r) in res{
+                            println!("Done[{t}]: \n{r}")
+
                         }
                     } else {
-                        let res = run(*args, session_context);
-                        println!("{res}")
+                        let (t,res) = run(*args, session_context);
+                        println!("Done[{t}]: \n{res}")
                     }
                     
                 }

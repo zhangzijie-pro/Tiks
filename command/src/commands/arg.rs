@@ -125,7 +125,6 @@ pub fn execute_command(command: &str, option: &str, arg: &Vec<String>, session_c
                 _=>{
                     if session_context.user_state.root.check_permission() {
                         session_context.user_state.exit_root();
-                        println!("Switched to root mode: {}", session_context.user_state.root.check_permission());
                     } else {
                         std::process::exit(0);
                     }
@@ -145,7 +144,7 @@ pub fn execute_command(command: &str, option: &str, arg: &Vec<String>, session_c
             }
             _=>Ok((0,"help:\n  -i|-install: install package \n  -u|-update: update this version".to_string()))
         },
-        //
+        "export" => set(&arg[0], &arg[1]),
         "whoami" => whoami(session_context),
         "pd" => match option{  // match arg empty
             "-f"|"-fix" => match arg.is_empty(){
@@ -173,7 +172,7 @@ pub fn execute_other_command(command: &str, option: &str, arg: &[String]) -> Res
     match command {
         "help" => Ok((0,help())),
         "pwd" => pwd(),
-        "time" => get_time(),
+        "time" => Ok(get_time()),
         "history" => history(),
         // test C define here
         "hello_c" => {
