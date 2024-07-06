@@ -1,6 +1,6 @@
 [package]
-name = "command"
-version = "1.0.4"
+name = "tiks_command"
+version = "1.0.51"
 edition = "2021" 
 authors = ["Zhangzijie <zzj01262022@163.com>"]
 repository = "https://github.com/zhangzijie-pro/Tiks.git"
@@ -8,11 +8,12 @@ readme = "README.md"
 description = "A Linux terminal simulator.fast!"
 license = "MIT"
 include = ["src/**/*", "Cargo.*", "LICENSE", "README.md", "build.rs", "bin", "[*test*]"]
+build = "build.rs"
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-dashmap = "5.5.2"
 tokio = { version = "1", features = ["full"] }
 async-trait = "0.1.77"
 lazy_static = { version = "1.4.0"}
@@ -29,7 +30,6 @@ base64 = "0.22.0"
 rustyline = "8.0.0"
 async-std = { version = "1.10", features = ["attributes"] }
 
-
 [target.'cfg(not(target_os = "windows"))'.dependencies]
 term_size = "0.3.0"
 termion = "3.0.0"
@@ -43,15 +43,4 @@ target_name = "tiks"
 
 [build-dependencies]
 cc = "1.0"
-
-[profile.dev]
-panic = "abort"
-
-
-[profile.release]
-opt-level = "z"     # Optimize for size.
-lto = true          # Enable Link Time Optimization
-codegen-units = 1   # Reduce number of codegen units to increase optimizations.
-panic = "abort"     # Abort on panic
-strip = true        # Automatically strip symbols from the binary.
 

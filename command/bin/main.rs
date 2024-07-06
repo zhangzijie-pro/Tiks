@@ -6,10 +6,10 @@
 // There is some error or other suggestions contact me : zzj01262022@163.com
 // Cargo run
 
-use command::env::init_env;
-use command::run::init_shell;
-use command::start::start_logo::start_logo;
-use command::root::SESSION;
+use tiks_command::env::init_env;
+use tiks_command::run::init_shell;
+use tiks_command::start::start_logo::start_logo;
+use tiks_command::root::SESSION;
 
 fn main() {
         start_logo();

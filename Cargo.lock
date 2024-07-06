@@ -322,31 +322,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "command"
-version = "1.0.4"
-dependencies = [
- "async-std",
- "async-trait",
- "base64",
- "cc",
- "chrono",
- "dashmap",
- "dirs",
- "flate2",
- "lazy_static",
- "libc",
- "once_cell",
- "reqwest",
- "rpassword",
- "rustyline",
- "tar",
- "term_size",
- "termion",
- "tokio",
- "webbrowser",
-]
-
-[[package]]
 name = "concurrent-queue"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -385,19 +360,6 @@ name = "crossbeam-utils"
 version = "0.8.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "248e3bacc7dc6baa3b21e405ee045c3047101a49145e7e9eca583ab4c2ca5345"
-
-[[package]]
-name = "dashmap"
-version = "5.5.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "978747c1d849a7d2ee5e8adc0159961c48fb7e5db2f06af6723b80123bb53856"
-dependencies = [
- "cfg-if",
- "hashbrown",
- "lock_api",
- "once_cell",
- "parking_lot_core",
-]
 
 [[package]]
 name = "dirs"
@@ -1777,6 +1739,30 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.49",
+]
+
+[[package]]
+name = "tiks_command"
+version = "1.0.51"
+dependencies = [
+ "async-std",
+ "async-trait",
+ "base64",
+ "cc",
+ "chrono",
+ "dirs",
+ "flate2",
+ "lazy_static",
+ "libc",
+ "once_cell",
+ "reqwest",
+ "rpassword",
+ "rustyline",
+ "tar",
+ "term_size",
+ "termion",
+ "tokio",
+ "webbrowser",
 ]
 
 [[package]]

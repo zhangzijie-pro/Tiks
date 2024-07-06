@@ -70,6 +70,7 @@ pub fn ls() -> io::Result<(usize,String)> {
 
 // ll
 #[allow(unused_assignments)]
+#[allow(unused_variables)]
 #[allow(unused_mut)]
 pub fn ll(context: &SessionContext) -> io::Result<(usize,String)>{
     let dir_path = Path::new("./");
@@ -161,13 +162,13 @@ pub fn history_push(command: String){
 
 
 pub fn history() -> Result<(usize,String),Error>{
+    let mut output = format!("");
     let s = HISTROY.lock().unwrap();
     for (i,c) in s.iter().enumerate(){
-        println!("{}: {}",i,c);
+        output.push_str(&format!("{}:{:5}",i,c));
+        output.push_str("\n");
     }
-
-    let res = String::new().trim().to_owned();
-    Ok((STATUE_CODE,res))
+    Ok((STATUE_CODE,output))
 }
 
 
@@ -445,6 +446,7 @@ pub fn cp(source:&str, to: &str) -> io::Result<(usize,String)>{
 
 
 // sudo
+// web in toggle root have bug (Can't show input password in the Tzcode terimal)
 #[allow(unused_assignments)]
 pub fn sudo(session_context: &mut SessionContext)->io::Result<(usize,String)>{
     loop{
